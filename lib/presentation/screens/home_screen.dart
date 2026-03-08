@@ -9,6 +9,7 @@ import 'package:biblesos/presentation/screens/bookmarks_screen.dart';
 import 'package:biblesos/presentation/screens/reader_screen.dart';
 import 'package:biblesos/presentation/screens/settings_screen.dart';
 import 'package:biblesos/presentation/screens/converts_screen.dart';
+import 'package:biblesos/presentation/screens/tsa_sione_screen.dart';
 
 class MainNavigator extends ConsumerStatefulWidget {
   const MainNavigator({super.key});
@@ -275,7 +276,12 @@ class QuickAccessMenu extends StatelessWidget {
         label: 'Tsa Sione',
         icon: Icons.library_music_outlined,
         color: const Color(0xFFBD10E0),
-        onTap: () {},
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const TsaSioneScreen()),
+          );
+        },
       ),
     ];
 
