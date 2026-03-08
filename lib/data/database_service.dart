@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 import 'package:biblesos/domain/entities/bible_models.dart';
+import 'package:biblesos/data/storage_service.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -40,8 +41,14 @@ class DatabaseService {
     // open the database
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute('CREATE INDEX IF NOT EXISTS idx_bible_book_chapter ON bible (book, chapter)');
+        }
+      },
       onCreate: (db, version) async {
+        await db.execute('CREATE INDEX IF NOT EXISTS idx_bible_book_chapter ON bible (book, chapter)');
         // User data tables
         await db.execute('''
           CREATE TABLE bookmarks (
@@ -78,25 +85,53 @@ class DatabaseService {
   }
 
   Future<void> addToHistory(int bookId, String bookName, int chapter) async {
-    final db = await database;
-    await db.insert(
-      'history',
-      {
-        'book_id': bookId,
-        'book_name': bookName,
-        'chapter': chapter,
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+    final history = StorageService.historyBox.get('all_history') as List? ?? [];
+    final newItem = {
+      'book_id': bookId,
+      'book_name': bookName,
+      'chapter': chapter,
+      'timestamp': DateTime.now().toIso8601String(),
+    };
+    
+    // Remove if exists
+    final updatedHistory = history.where((item) => 
+      item['book_id'] != bookId || item['chapter'] != chapter
+    ).toList();
+    
+    updatedHistory.insert(0, newItem);
+    if (updatedHistory.length > 20) updatedHistory.removeLast();
+    
+    await StorageService.historyBox.put('all_history', updatedHistory);
   }
 
   Future<List<Map<String, dynamic>>> getHistory() async {
+    final history = StorageService.historyBox.get('all_history') as List? ?? [];
+    return history.map((e) => Map<String, dynamic>.from(e)).toList();
+  }
+
+  Future<void> toggleBookmark(int verseId) async {
+    final list = StorageService.bookmarksBox.get('verse_bookmarks') as List? ?? [];
+    if (list.contains(verseId)) {
+      list.remove(verseId);
+    } else {
+      list.add(verseId);
+    }
+    await StorageService.bookmarksBox.put('verse_bookmarks', list);
+  }
+
+  Future<List<Verse>> getBookmarks() async {
+    final list = StorageService.bookmarksBox.get('verse_bookmarks') as List? ?? [];
+    if (list.isEmpty) return [];
+    
     final db = await database;
-    return await db.rawQuery('''
-      SELECT h.* FROM history h
-      ORDER BY timestamp DESC
-      LIMIT 10
+    final String ids = list.join(',');
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT b.rowid as id, b.*, bk.book as book_name 
+      FROM bible b
+      JOIN book bk ON b.book = bk.id
+      WHERE b.rowid IN ($ids)
     ''');
+    return maps.map((m) => Verse.fromMap(m)).toList();
   }
 
   // Helper methods to query basic info
@@ -133,10 +168,18 @@ class DatabaseService {
   Future<int> getChapterCount(int bookId) async {
     final db = await database;
     final result = await db.rawQuery(
-        'SELECT COUNT(DISTINCT chapter) as count FROM bible WHERE book = ?',
+        'SELECT MAX(chapter) as count FROM bible WHERE book = ?',
         [bookId]);
+    return (result.first['count'] as int?) ?? 1;
+  }
+  Future<int> getVerseCount(int bookId, int chapter) async {
+    final db = await database;
+    final result = await db.rawQuery(
+        'SELECT COUNT(*) as count FROM bible WHERE book = ? AND chapter = ?',
+        [bookId, chapter]);
     return result.first['count'] as int;
   }
+
   Future<void> saveHighlight(int verseId, String color) async {
     final db = await database;
     await db.insert(

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:biblesos/presentation/providers/bible_providers.dart';
-import 'package:biblesos/presentation/screens/bible_browser_screen.dart';
 import 'package:biblesos/presentation/screens/search_screen.dart';
 import 'package:biblesos/presentation/screens/bookmarks_screen.dart';
 import 'package:biblesos/presentation/screens/reader_screen.dart';
@@ -18,11 +17,11 @@ class _MainNavigatorState extends ConsumerState<MainNavigator> {
   int _selectedIndex = 0;
 
   static final List<Widget> _pages = [
-    HomeContent(),
-    BibleBrowserScreen(),
-    SearchScreen(),
-    BookmarksScreen(),
-    SettingsScreen(),
+    const HomeContent(),
+    const ReaderScreen(),
+    const SearchScreen(),
+    const BookmarksScreen(),
+    const SettingsScreen(),
   ];
 
   @override
@@ -38,10 +37,19 @@ class _MainNavigatorState extends ConsumerState<MainNavigator> {
         },
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.book_outlined), label: 'Bible'),
+          NavigationDestination(
+            icon: Icon(Icons.book_outlined),
+            label: 'Bible',
+          ),
           NavigationDestination(icon: Icon(Icons.search), label: 'Search'),
-          NavigationDestination(icon: Icon(Icons.bookmark_outline), label: 'Saved'),
-          NavigationDestination(icon: Icon(Icons.settings_outlined), label: 'Settings'),
+          NavigationDestination(
+            icon: Icon(Icons.bookmark_outline),
+            label: 'Saved',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            label: 'Settings',
+          ),
         ],
       ),
     );
@@ -61,7 +69,10 @@ class HomeContent extends ConsumerWidget {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            Text('Verse of the Day', style: Theme.of(context).textTheme.headlineSmall),
+            Text(
+              'Verse of the Day',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
             const SizedBox(height: 16),
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 24.0),
@@ -74,13 +85,19 @@ class HomeContent extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 8),
-            const Text('Johanne 3:16', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Johanne 3:16',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 40),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text('Recent Reading', style: Theme.of(context).textTheme.titleLarge),
+                child: Text(
+                  'Recent Reading',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
               ),
             ),
             historyAsync.when(
@@ -101,11 +118,17 @@ class HomeContent extends ConsumerWidget {
                       leading: const Icon(Icons.history),
                       title: Text('${item['book_name']} ${item['chapter']}'),
                       onTap: () {
-                        ref.read(selectedBookIdProvider.notifier).set(item['book_id']);
-                        ref.read(selectedChapterProvider.notifier).set(item['chapter']);
+                        ref
+                            .read(selectedBookIdProvider.notifier)
+                            .set(item['book_id']);
+                        ref
+                            .read(selectedChapterProvider.notifier)
+                            .set(item['chapter']);
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const ReaderScreen()),
+                          MaterialPageRoute(
+                            builder: (context) => const ReaderScreen(),
+                          ),
                         );
                       },
                     );

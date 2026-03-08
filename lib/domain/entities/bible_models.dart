@@ -14,9 +14,9 @@ class Book {
 
 class VerseSegment {
   final String text;
-  final bool isJesusSpeaking;
+  final bool isJesusWords;
 
-  VerseSegment(this.text, {this.isJesusSpeaking = false});
+  VerseSegment(this.text, {this.isJesusWords = false});
 }
 
 class Verse {
@@ -59,7 +59,7 @@ class Verse {
     for (int i = 0; i < parts.length; i++) {
       if (parts[i].isEmpty) continue;
       // Index 0 is normal, 1 is Jesus, 2 is normal, etc.
-      result.add(VerseSegment(parts[i], isJesusSpeaking: i % 2 != 0));
+      result.add(VerseSegment(parts[i], isJesusWords: i % 2 != 0));
     }
     return result;
   }

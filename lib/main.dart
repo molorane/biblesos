@@ -4,8 +4,11 @@ import 'package:biblesos/theme/app_theme.dart';
 import 'package:biblesos/presentation/screens/home_screen.dart';
 import 'package:biblesos/presentation/providers/bible_providers.dart';
 
-void main() {
+import 'package:biblesos/data/storage_service.dart';
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await StorageService.init();
   runApp(
     const ProviderScope(
       child: BibleSOSApp(),

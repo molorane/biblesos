@@ -1,33 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:biblesos/data/repositories/bible_repository_impl.dart';
 import 'package:biblesos/domain/entities/bible_models.dart';
+import 'package:biblesos/data/storage_service.dart';
 
-// Theme persistence
+// Theme persistence via Hive
 class ThemeModeNotifier extends Notifier<ThemeMode> {
   static const _key = 'theme_mode';
 
   @override
   ThemeMode build() {
-    // We can't use await here easily in a sync build
-    // So we use a default and load asynchronously
-    _loadTheme();
-    return ThemeMode.system;
-  }
-
-  Future<void> _loadTheme() async {
-    final prefs = await SharedPreferences.getInstance();
-    final index = prefs.getInt(_key);
+    final index = StorageService.getInt(_key);
     if (index != null) {
-      state = ThemeMode.values[index];
+      return ThemeMode.values[index];
     }
+    return ThemeMode.system;
   }
 
   void set(ThemeMode mode) async {
     state = mode;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt(_key, mode.index);
+    await StorageService.setInt(_key, mode.index);
   }
 }
 
@@ -47,8 +39,15 @@ final booksProvider = FutureProvider<List<Book>>((ref) async {
 // Using Notifier for state management in Riverpod 3.0
 class SelectedBookIdNotifier extends Notifier<int?> {
   @override
-  int? build() => null;
-  void set(int? id) => state = id;
+  int? build() => StorageService.getLastBookId() ?? 1;
+  
+  void set(int? id) {
+    state = id;
+    if (id != null) {
+      final currentChapter = ref.read(selectedChapterProvider);
+      StorageService.saveLastPosition(id, currentChapter);
+    }
+  }
 }
 
 final selectedBookIdProvider = NotifierProvider<SelectedBookIdNotifier, int?>(
@@ -57,22 +56,60 @@ final selectedBookIdProvider = NotifierProvider<SelectedBookIdNotifier, int?>(
 
 class SelectedChapterNotifier extends Notifier<int> {
   @override
-  int build() => 1;
-  void set(int chapter) => state = chapter;
+  int build() => StorageService.getLastChapter();
+  
+  void set(int chapter) {
+    state = chapter;
+    final bookId = ref.read(selectedBookIdProvider);
+    if (bookId != null) {
+      StorageService.saveLastPosition(bookId, chapter);
+    }
+  }
 }
 
 final selectedChapterProvider = NotifierProvider<SelectedChapterNotifier, int>(
   SelectedChapterNotifier.new,
 );
 
-final chaptersVersesProvider = FutureProvider<List<Verse>>((ref) async {
-  final bookId = ref.watch(selectedBookIdProvider);
-  final chapter = ref.watch(selectedChapterProvider);
+class SelectedVerseNotifier extends Notifier<int> {
+  @override
+  int build() => StorageService.getLastVerse();
   
-  if (bookId == null) return [];
-  
+  void set(int verse) {
+    state = verse;
+    final bookId = ref.read(selectedBookIdProvider);
+    final chapter = ref.read(selectedChapterProvider);
+    if (bookId != null) {
+      StorageService.saveLastPosition(bookId, chapter, verse: verse);
+    }
+  }
+}
+
+final selectedVerseProvider = NotifierProvider<SelectedVerseNotifier, int>(
+  SelectedVerseNotifier.new,
+);
+
+class ChaptersVersesParams {
+  final int bookId;
+  final int chapter;
+
+  ChaptersVersesParams(this.bookId, this.chapter);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ChaptersVersesParams &&
+          runtimeType == other.runtimeType &&
+          bookId == other.bookId &&
+          chapter == other.chapter;
+
+  @override
+  int get hashCode => bookId.hashCode ^ chapter.hashCode;
+}
+
+final chaptersVersesProviderFamily = FutureProvider.family<List<Verse>, ChaptersVersesParams>((ref, params) async {
   final repository = ref.watch(bibleRepositoryProvider);
-  return await repository.getChapterVerses(bookId, chapter);
+  return await repository.getChapterVerses(params.bookId, params.chapter);
 });
 
 class SearchQueryNotifier extends Notifier<String> {
@@ -101,6 +138,16 @@ final bookmarksProvider = FutureProvider<List<Verse>>((ref) async {
 final historyProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final repository = ref.watch(bibleRepositoryProvider);
   return await repository.getHistory();
+});
+
+final chapterCountProvider = FutureProvider.family<int, int>((ref, bookId) async {
+  final repository = ref.watch(bibleRepositoryProvider);
+  return await repository.getChapterCount(bookId);
+});
+
+final verseCountProvider = FutureProvider.family<int, ChaptersVersesParams>((ref, params) async {
+  final repository = ref.watch(bibleRepositoryProvider);
+  return await repository.getVerseCount(params.bookId, params.chapter);
 });
 
 final highlightsProvider = FutureProvider<Map<int, String>>((ref) async {
