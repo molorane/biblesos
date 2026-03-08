@@ -34,7 +34,7 @@ class SearchScreen extends ConsumerWidget {
               return ListTile(
                 title: Text('${verse.book} ${verse.chapter}:${verse.verse}'),
                 subtitle: Text(
-                  verse.scripture,
+                  verse.displayScripture,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),

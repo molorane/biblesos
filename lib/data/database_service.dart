@@ -1,8 +1,7 @@
 import 'dart:io';
 import 'package:flutter/services.dart';
-import 'package:path/path.dart';
+import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:biblesos/domain/entities/bible_models.dart';
 
 class DatabaseService {
@@ -20,23 +19,17 @@ class DatabaseService {
   }
 
   Future<Database> _initDatabase() async {
-    Directory documentsDirectory = await getApplicationDocumentsDirectory();
-    String path = join(documentsDirectory.path, "sso.db");
-
-    // Check if the database exists
+    String path = p.join(await getDatabasesPath(), 'Sesotho.db');
     bool exists = await databaseExists(path);
 
     if (!exists) {
       // Creating new copy from assets
-
       try {
-        await Directory(dirname(path)).create(recursive: true);
+        await Directory(p.dirname(path)).create(recursive: true);
       } catch (_) {}
 
-      // Copy from assets
-      ByteData data = await rootBundle.load(join("assets", "sso.db"));
-      List<int> bytes =
-          data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+      ByteData data = await rootBundle.load(p.join('assets', 'db', 'Sesotho.db'));
+      List<int> bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
 
       // Write and flush the bytes written
       await File(path).writeAsBytes(bytes, flush: true);
@@ -45,57 +38,62 @@ class DatabaseService {
     }
 
     // open the database
-    final db = await openDatabase(path, readOnly: false);
-
-    // Create user data tables if they don't exist
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS bookmarks (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        verse_id INTEGER UNIQUE
-      )
-    ''');
-
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS notes (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        verse_id INTEGER UNIQUE,
-        content TEXT
-      )
-    ''');
-
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS highlights (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        verse_id INTEGER UNIQUE,
-        color TEXT
-      )
-    ''');
-
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS history (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        book_id INTEGER,
-        chapter INTEGER,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    ''');
-
-    return db;
+    return await openDatabase(
+      path,
+      version: 1,
+      onCreate: (db, version) async {
+        // User data tables
+        await db.execute('''
+          CREATE TABLE bookmarks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            verse_id INTEGER UNIQUE
+          )
+        ''');
+        await db.execute('''
+          CREATE TABLE notes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            verse_id INTEGER UNIQUE,
+            content TEXT
+          )
+        ''');
+        await db.execute('''
+          CREATE TABLE highlights (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            verse_id INTEGER UNIQUE,
+            color TEXT
+          )
+        ''');
+        await db.execute('''
+          CREATE TABLE history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            book_id INTEGER,
+            book_name TEXT,
+            chapter INTEGER,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(book_id, chapter)
+          )
+        ''');
+      },
+    );
   }
 
-  Future<void> addToHistory(int bookId, int chapter) async {
+  Future<void> addToHistory(int bookId, String bookName, int chapter) async {
     final db = await database;
-    await db.insert('history', {
-      'book_id': bookId,
-      'chapter': chapter,
-    });
+    await db.insert(
+      'history',
+      {
+        'book_id': bookId,
+        'book_name': bookName,
+        'chapter': chapter,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<List<Map<String, dynamic>>> getHistory() async {
     final db = await database;
     return await db.rawQuery('''
-      SELECT h.*, b.book as book_name FROM history h
-      JOIN books b ON h.book_id = b.id
+      SELECT h.* FROM history h
       ORDER BY timestamp DESC
       LIMIT 10
     ''');
@@ -104,36 +102,38 @@ class DatabaseService {
   // Helper methods to query basic info
   Future<List<Book>> getBooks() async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('books', orderBy: 'id ASC');
+    final List<Map<String, dynamic>> maps = await db.query('book', orderBy: 'id ASC');
     return maps.map((m) => Book.fromMap(m)).toList();
   }
 
   Future<List<Verse>> getVerses(int bookId, int chapter) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'scriptures',
-      where: 'book_num = ? AND chapter = ?',
-      whereArgs: [bookId, chapter],
-      orderBy: 'verse ASC',
-    );
+    // Join with 'book' table to get book name, use rowid if id is missing in 'bible'
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT b.rowid as id, b.*, bk.book as book_name 
+      FROM bible b
+      JOIN book bk ON b.book = bk.id
+      WHERE b.book = ? AND b.chapter = ?
+      ORDER BY b.verse ASC
+    ''', [bookId, chapter]);
     return maps.map((m) => Verse.fromMap(m)).toList();
   }
 
   Future<List<Verse>> searchScriptures(String query) async {
     final db = await database;
-    // Basic LIKE search for now, can upgrade to FTS later
-    final List<Map<String, dynamic>> maps = await db.query(
-      'scriptures',
-      where: 'scripture LIKE ?',
-      whereArgs: ['%$query%'],
-      limit: 50,
-    );
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT b.rowid as id, b.*, bk.book as book_name
+      FROM bible b
+      JOIN book bk ON b.book = bk.id
+      WHERE b.scripture LIKE ?
+      LIMIT 50
+    ''', ['%$query%']);
     return maps.map((m) => Verse.fromMap(m)).toList();
   }
   Future<int> getChapterCount(int bookId) async {
     final db = await database;
     final result = await db.rawQuery(
-        'SELECT COUNT(DISTINCT chapter) as count FROM scriptures WHERE book_num = ?',
+        'SELECT COUNT(DISTINCT chapter) as count FROM bible WHERE book = ?',
         [bookId]);
     return result.first['count'] as int;
   }
@@ -150,8 +150,8 @@ class DatabaseService {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.rawQuery('''
       SELECT h.verse_id, h.color FROM highlights h
-      JOIN scriptures s ON h.verse_id = s.id
-      WHERE s.book_num = ? AND s.chapter = ?
+      JOIN bible s ON h.verse_id = s.rowid
+      WHERE s.book = ? AND s.chapter = ?
     ''', [bookId, chapter]);
     
     return {for (var m in maps) m['verse_id'] as int: m['color'] as String};

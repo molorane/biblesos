@@ -12,6 +12,13 @@ class Book {
   }
 }
 
+class VerseSegment {
+  final String text;
+  final bool isJesusSpeaking;
+
+  VerseSegment(this.text, {this.isJesusSpeaking = false});
+}
+
 class Verse {
   final int id;
   final int bookNum;
@@ -33,16 +40,29 @@ class Verse {
     required this.scripture,
   });
 
-  factory Verse.fromMap(Map<String, dynamic> map) {
+  factory Verse.fromMap(Map<String, dynamic> map, {String? bookName}) {
     return Verse(
-      id: map['id'],
-      bookNum: map['book_num'],
-      testament: map['testament'],
-      book: map['book'],
+      id: map['rowid'] ?? map['id'],
+      bookNum: map['book'],
+      testament: map['testament'] ?? '',
+      book: bookName ?? map['book_name'] ?? '',
       chapter: map['chapter'],
       verse: map['verse'],
       title: map['title'],
       scripture: map['scripture'],
     );
   }
+
+  List<VerseSegment> get segments {
+    final parts = scripture.split('@');
+    final List<VerseSegment> result = [];
+    for (int i = 0; i < parts.length; i++) {
+      if (parts[i].isEmpty) continue;
+      // Index 0 is normal, 1 is Jesus, 2 is normal, etc.
+      result.add(VerseSegment(parts[i], isJesusSpeaking: i % 2 != 0));
+    }
+    return result;
+  }
+
+  String get displayScripture => scripture.replaceAll('@', '');
 }

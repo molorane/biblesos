@@ -17,13 +17,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final bookId = ref.read(selectedBookIdProvider);
-      final chapter = ref.read(selectedChapterProvider);
-      if (bookId != null) {
-        ref.read(bibleRepositoryProvider).addToHistory(bookId, chapter);
-      }
-    });
   }
 
   @override
@@ -31,6 +24,20 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     final versesAsync = ref.watch(chaptersVersesProvider);
     final highlightsAsync = ref.watch(highlightsProvider);
     final chapter = ref.watch(selectedChapterProvider);
+
+    // Listen for verses being loaded to add to history
+    ref.listen(chaptersVersesProvider, (previous, next) {
+      if (next.hasValue && next.value!.isNotEmpty) {
+        final bookId = ref.read(selectedBookIdProvider);
+        if (bookId != null) {
+          ref.read(bibleRepositoryProvider).addToHistory(
+            bookId, 
+            next.value!.first.book, 
+            chapter,
+          );
+        }
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -91,7 +98,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                             fontSize: 14,
                           ),
                         ),
-                        TextSpan(text: verse.scripture),
+                        ...verse.segments.map((s) => TextSpan(
+                          text: s.text,
+                          style: TextStyle(
+                            color: s.isJesusSpeaking ? Colors.red.shade700 : null,
+                            fontWeight: s.isJesusSpeaking ? FontWeight.w500 : null,
+                          ),
+                        )),
                       ],
                     ),
                   ),
@@ -138,7 +151,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
               leading: const Icon(Icons.share),
               title: const Text('Share'),
               onTap: () {
-                Share.share('${verse.book} ${verse.chapter}:${verse.verse}\n\n"${verse.scripture}"');
+                Share.share('${verse.book} ${verse.chapter}:${verse.verse}\n\n"${verse.displayScripture}"');
                 if (context.mounted) Navigator.pop(context);
               },
             ),

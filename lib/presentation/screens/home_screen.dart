@@ -5,6 +5,7 @@ import 'package:biblesos/presentation/screens/bible_browser_screen.dart';
 import 'package:biblesos/presentation/screens/search_screen.dart';
 import 'package:biblesos/presentation/screens/bookmarks_screen.dart';
 import 'package:biblesos/presentation/screens/reader_screen.dart';
+import 'package:biblesos/presentation/screens/settings_screen.dart';
 
 class MainNavigator extends ConsumerStatefulWidget {
   const MainNavigator({super.key});
@@ -16,11 +17,12 @@ class MainNavigator extends ConsumerStatefulWidget {
 class _MainNavigatorState extends ConsumerState<MainNavigator> {
   int _selectedIndex = 0;
 
-  static const List<Widget> _pages = [
+  static final List<Widget> _pages = [
     HomeContent(),
     BibleBrowserScreen(),
     SearchScreen(),
     BookmarksScreen(),
+    SettingsScreen(),
   ];
 
   @override
@@ -39,6 +41,7 @@ class _MainNavigatorState extends ConsumerState<MainNavigator> {
           NavigationDestination(icon: Icon(Icons.book_outlined), label: 'Bible'),
           NavigationDestination(icon: Icon(Icons.search), label: 'Search'),
           NavigationDestination(icon: Icon(Icons.bookmark_outline), label: 'Saved'),
+          NavigationDestination(icon: Icon(Icons.settings_outlined), label: 'Settings'),
         ],
       ),
     );

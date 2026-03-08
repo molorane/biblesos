@@ -10,7 +10,7 @@ abstract class BibleRepository {
   Future<List<Verse>> getBookmarks();
   Future<void> saveNote(int verseId, String note);
   Future<String?> getNote(int verseId);
-  Future<void> addToHistory(int bookId, int chapter);
+  Future<void> addToHistory(int bookId, String bookName, int chapter);
   Future<void> saveHighlight(int verseId, String color);
   Future<Map<int, String>> getHighlights(int bookId, int chapter);
   Future<List<Map<String, dynamic>>> getHistory();
@@ -20,8 +20,8 @@ class BibleRepositoryImpl implements BibleRepository {
   final DatabaseService _dbService = DatabaseService();
 
   @override
-  Future<void> addToHistory(int bookId, int chapter) async {
-    await _dbService.addToHistory(bookId, chapter);
+  Future<void> addToHistory(int bookId, String bookName, int chapter) async {
+    await _dbService.addToHistory(bookId, bookName, chapter);
   }
 
   @override
@@ -74,8 +74,9 @@ class BibleRepositoryImpl implements BibleRepository {
   Future<List<Verse>> getBookmarks() async {
     final db = await _dbService.database;
     final List<Map<String, dynamic>> maps = await db.rawQuery('''
-      SELECT s.* FROM scriptures s
-      JOIN bookmarks b ON s.id = b.verse_id
+      SELECT s.rowid as id, s.*, bk.book as book_name FROM bible s
+      JOIN book bk ON s.book = bk.id
+      JOIN bookmarks b ON s.rowid = b.verse_id
     ''');
     return maps.map((m) => Verse.fromMap(m)).toList();
   }

@@ -23,7 +23,7 @@ class BookmarksScreen extends ConsumerWidget {
               final verse = bookmarks[index];
               return ListTile(
                 title: Text('${verse.book} ${verse.chapter}:${verse.verse}'),
-                subtitle: Text(verse.scripture, maxLines: 2, overflow: TextOverflow.ellipsis),
+                subtitle: Text(verse.displayScripture, maxLines: 2, overflow: TextOverflow.ellipsis),
                 onTap: () {
                   ref.read(selectedBookIdProvider.notifier).set(verse.bookNum);
                   ref.read(selectedChapterProvider.notifier).set(verse.chapter);
