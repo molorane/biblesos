@@ -1,4 +1,6 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:biblesos/presentation/providers/bible_providers.dart';
 import 'package:biblesos/presentation/screens/search_screen.dart';
@@ -68,28 +70,8 @@ class HomeContent extends ConsumerWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            const SizedBox(height: 20),
-            Text(
-              'Verse of the Day',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 16),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24.0),
-              child: Text(
-                '"Etsoe Morena o ile a rata fatshe hakaalo, a ba a le neela Mora oa hae ea tsoetsoeng a '
-                'le mong, hore e mong le e mong ea lumelang ho eena a se ke a timela, '
-                'a mpe a be le bophelo bo sa feleng."',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18, fontStyle: FontStyle.italic),
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Johanne 3:16',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 40),
+            const VerseOfTheDayCard(),
+            const SizedBox(height: 24),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Align(
@@ -137,6 +119,150 @@ class HomeContent extends ConsumerWidget {
               },
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, stack) => Text('Error loading history: $err'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class VerseOfTheDayCard extends StatelessWidget {
+  const VerseOfTheDayCard({super.key});
+
+  static const List<String> _bgImages = [
+    '1.jpg', '2.jpg', '5.jpg', '7.jpg', '8.jpg', '9.jpg',
+    '10.jpg', '11.jpg', '12.jpg', '13.jpg', '14.jpg', '15.jpg'
+  ];
+
+  String _getSelectedImage() {
+    final now = DateTime.now();
+    // Use dayOfYear % count for daily rotation
+    final startOfYear = DateTime(now.year, 1, 1);
+    final dayOfYear = now.difference(startOfYear).inDays;
+    return _bgImages[dayOfYear % _bgImages.length];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      height: 240,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+        image: DecorationImage(
+          image: AssetImage('assets/images/${_getSelectedImage()}'),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
+            // Dark Gradient Overlay for readability
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: const [0.0, 0.4, 1.0],
+                  colors: [
+                    Colors.black.withOpacity(0.1),
+                    Colors.black.withOpacity(0.3),
+                    Colors.black.withOpacity(0.7),
+                  ],
+                ),
+              ),
+            ),
+            // Bottom Glass effect
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 64,
+              child: ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    color: Colors.white.withOpacity(0.1),
+                  ),
+                ),
+              ),
+            ),
+            // Content
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'VERSE OF THE DAY',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Expanded(
+                    flex: 4,
+                    child: Center(
+                      child: SingleChildScrollView(
+                        child: Text(
+                          '"Etsoe Morena o ile a rata fatshe hakaalo, a ba a le neela Mora oa hae ea tsoetsoeng a '
+                          'le mong, hore e mong le e mong ea lumelang ho eena a se ke a timela, '
+                          'a mpe a be le bophelo bo sa feleng."',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.crimsonText(
+                            color: Colors.white,
+                            fontSize: 19,
+                            fontStyle: FontStyle.italic,
+                            height: 1.3,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Johanne 3:16',
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Icon(Icons.share_outlined, color: Colors.white.withOpacity(0.9), size: 20),
+                          const SizedBox(width: 16),
+                          Icon(Icons.bookmark_border, color: Colors.white.withOpacity(0.9), size: 20),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
