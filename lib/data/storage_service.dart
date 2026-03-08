@@ -23,6 +23,9 @@ class StorageService {
   static String? getString(String key) => settingsBox.get(key);
   static Future<void> setString(String key, String value) => settingsBox.put(key, value);
 
+  static double? getDouble(String key) => settingsBox.get(key);
+  static Future<void> setDouble(String key, double value) => settingsBox.put(key, value);
+
   // Last Read helpers
   static const String keyLastBookId = 'last_book_id';
   static const String keyLastChapter = 'last_chapter';

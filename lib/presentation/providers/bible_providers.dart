@@ -158,3 +158,40 @@ final highlightsProvider = FutureProvider<Map<int, String>>((ref) async {
   final repository = ref.watch(bibleRepositoryProvider);
   return await repository.getHighlights(bookId, chapter);
 });
+
+// Reader UI Settings
+class ReaderFontSizeNotifier extends Notifier<double> {
+  static const _key = 'reader_font_size';
+  
+  @override
+  double build() {
+    return StorageService.getDouble(_key) ?? 20.0;
+  }
+
+  void set(double size) async {
+    state = size;
+    await StorageService.setDouble(_key, size);
+  }
+}
+
+final readerFontSizeProvider = NotifierProvider<ReaderFontSizeNotifier, double>(
+  ReaderFontSizeNotifier.new,
+);
+
+class ReaderFontFamilyNotifier extends Notifier<String> {
+  static const _key = 'reader_font_family';
+  
+  @override
+  String build() {
+    return StorageService.getString(_key) ?? 'Crimson Text';
+  }
+
+  void set(String family) async {
+    state = family;
+    await StorageService.setString(_key, family);
+  }
+}
+
+final readerFontFamilyProvider = NotifierProvider<ReaderFontFamilyNotifier, String>(
+  ReaderFontFamilyNotifier.new,
+);

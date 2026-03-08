@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +8,7 @@ import 'package:biblesos/presentation/screens/search_screen.dart';
 import 'package:biblesos/presentation/screens/bookmarks_screen.dart';
 import 'package:biblesos/presentation/screens/reader_screen.dart';
 import 'package:biblesos/presentation/screens/settings_screen.dart';
+import 'package:biblesos/presentation/screens/converts_screen.dart';
 
 class MainNavigator extends ConsumerStatefulWidget {
   const MainNavigator({super.key});
@@ -72,55 +74,8 @@ class HomeContent extends ConsumerWidget {
           children: [
             const VerseOfTheDayCard(),
             const QuickAccessMenu(),
+            const DailyMannaButton(),
             const SizedBox(height: 24),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Recent Reading',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
-            ),
-            historyAsync.when(
-              data: (history) {
-                if (history.isEmpty) {
-                  return const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Text('Your reading history will appear here.'),
-                  );
-                }
-                return ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: history.length,
-                  itemBuilder: (context, index) {
-                    final item = history[index];
-                    return ListTile(
-                      leading: const Icon(Icons.history),
-                      title: Text('${item['book_name']} ${item['chapter']}'),
-                      onTap: () {
-                        ref
-                            .read(selectedBookIdProvider.notifier)
-                            .set(item['book_id']);
-                        ref
-                            .read(selectedChapterProvider.notifier)
-                            .set(item['chapter']);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ReaderScreen(),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Text('Error loading history: $err'),
-            ),
           ],
         ),
       ),
@@ -285,41 +240,42 @@ class QuickAccessMenu extends StatelessWidget {
         label: 'Doctrines',
         icon: Icons.account_balance_outlined,
         color: const Color(0xFF4A90E2),
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Doctrines page coming soon')),
-          );
-        },
+        onTap: () {},
       ),
       _MenuItem(
         label: 'Converts',
         icon: Icons.person_add_outlined,
         color: const Color(0xFFF5A623),
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Converts page coming soon')),
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ConvertsScreen()),
           );
         },
+      ),
+      _MenuItem(
+        label: 'History',
+        icon: Icons.history,
+        color: const Color(0xFF7B7B7B),
+        onTap: () {},
+      ),
+      _MenuItem(
+        label: 'Bookmarks',
+        icon: Icons.bookmark_outline,
+        color: const Color(0xFFE91E63),
+        onTap: () {},
       ),
       _MenuItem(
         label: 'Hymns',
         icon: Icons.music_note_outlined,
         color: const Color(0xFF7ED321),
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Hymns page coming soon')),
-          );
-        },
+        onTap: () {},
       ),
       _MenuItem(
         label: 'Tsa Sione',
         icon: Icons.library_music_outlined,
         color: const Color(0xFFBD10E0),
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Tsa Sione page coming soon')),
-          );
-        },
+        onTap: () {},
       ),
     ];
 
@@ -341,14 +297,17 @@ class QuickAccessMenu extends StatelessWidget {
             ),
         ],
       ),
-      child: GridView.count(
+      child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 1.6,
-        children: menuItems.map((item) => _buildMenuTile(context, item, isDark)).toList(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 0.9,
+        ),
+        itemCount: menuItems.length,
+        itemBuilder: (context, index) => _buildMenuTile(context, menuItems[index], isDark),
       ),
     );
   }
@@ -405,4 +364,89 @@ class _MenuItem {
     required this.color,
     required this.onTap,
   });
+}
+
+class DailyMannaButton extends StatelessWidget {
+  const DailyMannaButton({super.key});
+
+  Future<void> _launchUrl() async {
+    final Uri url = Uri.parse('https://dailymanna.app');
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      throw Exception('Could not launch $url');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: InkWell(
+        onTap: _launchUrl,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          height: 80,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: const LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                Color(0xFFE57373), // Coral/Red
+                Color(0xFF81C784), // Soft Green
+              ],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: 20,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.coffee_outlined,
+                      color: Color(0xFF66BB6A),
+                      size: 30,
+                    ),
+                  ),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(left: 30),
+                child: Center(
+                  child: Row(
+                    children: [
+                      Text(
+                        'Daily Manna',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
