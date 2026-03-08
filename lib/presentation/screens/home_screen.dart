@@ -11,6 +11,8 @@ import 'package:biblesos/presentation/screens/settings_screen.dart';
 import 'package:biblesos/presentation/screens/converts_screen.dart';
 import 'package:biblesos/presentation/screens/tsa_sione_screen.dart';
 import 'package:biblesos/presentation/screens/church_hymns_screen.dart';
+import 'package:biblesos/presentation/screens/history_screen.dart';
+import 'package:share_plus/share_plus.dart';
 
 class MainNavigator extends ConsumerStatefulWidget {
   const MainNavigator({super.key});
@@ -85,7 +87,7 @@ class HomeContent extends ConsumerWidget {
   }
 }
 
-class VerseOfTheDayCard extends StatelessWidget {
+class VerseOfTheDayCard extends ConsumerWidget {
   const VerseOfTheDayCard({super.key});
 
   static const List<String> _bgImages = [
@@ -102,87 +104,99 @@ class VerseOfTheDayCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      height: 240,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-        image: DecorationImage(
-          image: AssetImage('assets/images/${_getSelectedImage()}'),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: Stack(
-          children: [
-            // Dark Gradient Overlay for readability
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  stops: const [0.0, 0.4, 1.0],
-                  colors: [
-                    Colors.black.withOpacity(0.1),
-                    Colors.black.withOpacity(0.3),
-                    Colors.black.withOpacity(0.7),
-                  ],
-                ),
-              ),
+    return InkWell(
+      onTap: () {
+        // John 3:16 (Book 43, Chapter 3, Verse 16)
+        ref.read(selectedBookIdProvider.notifier).set(43);
+        ref.read(selectedChapterProvider.notifier).set(3);
+        ref.read(selectedVerseProvider.notifier).set(16);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ReaderScreen()),
+        );
+      },
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        height: 280,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
             ),
-            // Bottom Glass effect
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 64,
-              child: ClipRect(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Container(
-                    color: Colors.white.withOpacity(0.1),
+          ],
+          image: DecorationImage(
+            image: AssetImage('assets/images/${_getSelectedImage()}'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Stack(
+            children: [
+              // Dark Gradient Overlay for readability
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: const [0.0, 0.4, 1.0],
+                    colors: [
+                      Colors.black.withOpacity(0.1),
+                      Colors.black.withOpacity(0.3),
+                      Colors.black.withOpacity(0.7),
+                    ],
                   ),
                 ),
               ),
-            ),
-            // Content
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
+              // Bottom Glass effect
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 72,
+                child: ClipRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      color: Colors.white.withOpacity(0.1),
+                    ),
+                  ),
+                ),
+              ),
+              // Content
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'VERSE OF THE DAY',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5,
+                  Padding(
+                    padding: const EdgeInsets.only(top: 24, left: 24, right: 24),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'VERSE OF THE DAY',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.5,
+                        ),
                       ),
                     ),
                   ),
-                  const Spacer(),
                   Expanded(
-                    flex: 4,
-                    child: Center(
-                      child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Center(
                         child: Text(
                           '"Etsoe Morena o ile a rata fatshe hakaalo, a ba a le neela Mora oa hae ea tsoetsoeng a '
                           'le mong, hore e mong le e mong ea lumelang ho eena a se ke a timela, '
@@ -190,7 +204,7 @@ class VerseOfTheDayCard extends StatelessWidget {
                           textAlign: TextAlign.center,
                           style: GoogleFonts.crimsonText(
                             color: Colors.white,
-                            fontSize: 19,
+                            fontSize: 21,
                             fontStyle: FontStyle.italic,
                             height: 1.3,
                           ),
@@ -198,31 +212,45 @@ class VerseOfTheDayCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const Spacer(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Johanne 3:16',
-                        style: GoogleFonts.inter(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                  Container(
+                    height: 72,
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Johanne 3:16',
+                          style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
                         ),
-                      ),
-                      Row(
-                        children: [
-                          Icon(Icons.share_outlined, color: Colors.white.withOpacity(0.9), size: 20),
-                          const SizedBox(width: 16),
-                          Icon(Icons.bookmark_border, color: Colors.white.withOpacity(0.9), size: 20),
-                        ],
-                      ),
-                    ],
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.share_outlined, color: Colors.white.withOpacity(0.9), size: 22),
+                              constraints: const BoxConstraints(),
+                              padding: EdgeInsets.zero,
+                              onPressed: () {
+                                const verseText = 'Etsoe Morena o ile a rata fatshe hakaalo, a ba a le neela Mora oa hae ea tsoetsoeng a '
+                                    'le mong, hore e mong le e mong ea lumelang ho eena a se ke a timela, '
+                                    'a mpe a be le bophelo bo sa feleng.';
+                                const reference = 'Johanne 3:16';
+                                Share.share('"$verseText"\n\n$reference\nShared from Bible SOS');
+                              },
+                            ),
+                            const SizedBox(width: 20),
+                            Icon(Icons.bookmark_border, color: Colors.white.withOpacity(0.9), size: 22),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -259,13 +287,23 @@ class QuickAccessMenu extends StatelessWidget {
         label: 'History',
         icon: Icons.history,
         color: const Color(0xFF7B7B7B),
-        onTap: () {},
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const HistoryScreen()),
+          );
+        },
       ),
       _MenuItem(
         label: 'Bookmarks',
         icon: Icons.bookmark_outline,
         color: const Color(0xFFE91E63),
-        onTap: () {},
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const BookmarksScreen()),
+          );
+        },
       ),
       _MenuItem(
         label: 'Hymns',

@@ -41,6 +41,7 @@ class SearchScreen extends ConsumerWidget {
                 onTap: () {
                   ref.read(selectedBookIdProvider.notifier).set(verse.bookNum);
                   ref.read(selectedChapterProvider.notifier).set(verse.chapter);
+                  ref.read(selectedVerseProvider.notifier).set(verse.verse);
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const ReaderScreen()),
