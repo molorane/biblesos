@@ -66,3 +66,29 @@ class Verse {
 
   String get displayScripture => scripture.replaceAll('@', '');
 }
+
+class TextHighlight {
+  final int id;
+  final int verseId;
+  final int startOffset;
+  final int endOffset;
+  final String color;
+
+  TextHighlight({
+    required this.id,
+    required this.verseId,
+    required this.startOffset,
+    required this.endOffset,
+    required this.color,
+  });
+
+  factory TextHighlight.fromMap(Map<String, dynamic> map) {
+    return TextHighlight(
+      id: map['id'],
+      verseId: map['verse_id'],
+      startOffset: map['start_offset'],
+      endOffset: map['end_offset'],
+      color: map['color'],
+    );
+  }
+}

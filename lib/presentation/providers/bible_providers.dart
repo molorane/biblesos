@@ -173,6 +173,15 @@ final notesProvider = FutureProvider<Map<int, String>>((ref) async {
   return await repository.getChapterNotes(bookId, chapter);
 });
 
+final textHighlightsProvider = FutureProvider<Map<int, List<TextHighlight>>>((ref) async {
+  final bookId = ref.watch(selectedBookIdProvider);
+  final chapter = ref.watch(selectedChapterProvider);
+  if (bookId == null) return {};
+  
+  final repository = ref.watch(bibleRepositoryProvider);
+  return await repository.getTextHighlights(bookId, chapter);
+});
+
 // Reader UI Settings
 class ReaderFontSizeNotifier extends Notifier<double> {
   static const _key = 'reader_font_size';

@@ -40,7 +40,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           await db.execute('CREATE INDEX IF NOT EXISTS idx_bible_book_chapter ON bible (book, chapter)');
@@ -78,10 +78,21 @@ class DatabaseService {
             )
           ''');
         }
+        if (oldVersion < 4) {
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS text_highlights (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              verse_id INTEGER,
+              start_offset INTEGER,
+              end_offset INTEGER,
+              color TEXT,
+              UNIQUE(verse_id, start_offset, end_offset)
+            )
+          ''');
+        }
       },
       onCreate: (db, version) async {
         await db.execute('CREATE INDEX IF NOT EXISTS idx_bible_book_chapter ON bible (book, chapter)');
-        // User data tables
         await db.execute('''
           CREATE TABLE bookmarks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -100,6 +111,16 @@ class DatabaseService {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             verse_id INTEGER UNIQUE,
             color TEXT
+          )
+        ''');
+        await db.execute('''
+          CREATE TABLE text_highlights (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            verse_id INTEGER,
+            start_offset INTEGER,
+            end_offset INTEGER,
+            color TEXT,
+            UNIQUE(verse_id, start_offset, end_offset)
           )
         ''');
         await db.execute('''
@@ -241,5 +262,44 @@ class DatabaseService {
     ''', [bookId, chapter]);
     
     return {for (var m in maps) m['verse_id'] as int: m['content'] as String};
+  }
+
+  Future<void> saveTextHighlight(int verseId, int start, int end, String color) async {
+    final db = await database;
+    await db.insert(
+      'text_highlights',
+      {
+        'verse_id': verseId,
+        'start_offset': start,
+        'end_offset': end,
+        'color': color,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> deleteTextHighlight(int verseId, int start, int end) async {
+    final db = await database;
+    await db.delete(
+      'text_highlights',
+      where: 'verse_id = ? AND start_offset = ? AND end_offset = ?',
+      whereArgs: [verseId, start, end],
+    );
+  }
+
+  Future<Map<int, List<TextHighlight>>> getTextHighlights(int bookId, int chapter) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT h.* FROM text_highlights h
+      JOIN bible s ON h.verse_id = s.rowid
+      WHERE s.book = ? AND s.chapter = ?
+    ''', [bookId, chapter]);
+    
+    final Map<int, List<TextHighlight>> result = {};
+    for (var m in maps) {
+      final highlight = TextHighlight.fromMap(m);
+      result.putIfAbsent(highlight.verseId, () => []).add(highlight);
+    }
+    return result;
   }
 }

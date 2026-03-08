@@ -421,11 +421,175 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
     );
   }
 
+  TextSpan _buildVerseText(
+    Verse verse,
+    List<TextHighlight> highlights,
+    TextStyle baseStyle,
+    bool isSelected,
+    Color activeGreen,
+  ) {
+    final String text = verse.displayScripture;
+    final List<TextSpan> finalSpans = [];
+
+    // Add verse number
+    finalSpans.add(TextSpan(
+      text: '${verse.verse} ',
+      style: baseStyle.copyWith(
+        fontSize: baseStyle.fontSize! * 0.9,
+        fontWeight: FontWeight.bold,
+        color: isSelected ? activeGreen : null,
+      ),
+    ));
+
+    if (highlights.isEmpty) {
+      // Just Jesus words logic
+      for (var segment in verse.segments) {
+        finalSpans.add(TextSpan(
+          text: segment.text,
+          style: TextStyle(color: segment.isJesusWords ? Colors.red.shade700 : null),
+        ));
+      }
+      return TextSpan(children: finalSpans, style: baseStyle);
+    }
+
+    // Sort highlights
+    final sortedHighlights = List<TextHighlight>.from(highlights)
+      ..sort((a, b) => a.startOffset.compareTo(b.startOffset));
+
+    // Handle Jesus segments + Highlights
+    // This is complex, let's simplify: Render segments first, then apply highlights as we go
+    int currentGlobalOffset = 0;
+    for (var segment in verse.segments) {
+      final int segmentStart = currentGlobalOffset;
+      final int segmentEnd = currentGlobalOffset + segment.text.length;
+      final TextStyle segmentStyle = TextStyle(color: segment.isJesusWords ? Colors.red.shade700 : null);
+
+      // Find highlights that overlap with this segment
+      final segmentHighlights = sortedHighlights.where((h) => h.startOffset < segmentEnd && h.endOffset > segmentStart).toList();
+
+      if (segmentHighlights.isEmpty) {
+        finalSpans.add(TextSpan(text: segment.text, style: segmentStyle));
+      } else {
+        int inSegmentOffset = 0;
+        for (final h in segmentHighlights) {
+          final int hStartInSegment = (h.startOffset - segmentStart).clamp(0, segment.text.length);
+          final int hEndInSegment = (h.endOffset - segmentStart).clamp(0, segment.text.length);
+
+          if (hStartInSegment > inSegmentOffset) {
+            finalSpans.add(TextSpan(
+              text: segment.text.substring(inSegmentOffset, hStartInSegment),
+              style: segmentStyle,
+            ));
+          }
+
+          final Color highlightColor = _parseColor(h.color);
+          finalSpans.add(TextSpan(
+            text: segment.text.substring(hStartInSegment, hEndInSegment),
+            style: segmentStyle.copyWith(backgroundColor: highlightColor.withOpacity(0.3)),
+          ));
+          inSegmentOffset = hEndInSegment;
+        }
+
+        if (inSegmentOffset < segment.text.length) {
+          finalSpans.add(TextSpan(
+            text: segment.text.substring(inSegmentOffset),
+            style: segmentStyle,
+          ));
+        }
+      }
+      currentGlobalOffset = segmentEnd;
+    }
+
+    return TextSpan(children: finalSpans, style: baseStyle);
+  }
+
+  Color _parseColor(String colorStr) {
+    try {
+      if (colorStr.startsWith('#')) {
+        return Color(int.parse(colorStr.replaceFirst('#', '0xFF')));
+      }
+      return Color(int.parse(colorStr));
+    } catch (_) {
+      return Colors.yellow;
+    }
+  }
+
+  void _handleSelection(Verse verse, TextSelection selection) {
+    if (selection.isCollapsed) return;
+    
+    _showHighlightPickerDialog(context, verse, selection.start, selection.end);
+  }
+
+  void _showHighlightPickerDialog(BuildContext context, Verse verse, int start, int end) {
+    final colors = [
+      {'name': 'Yellow', 'color': Colors.yellow},
+      {'name': 'Green', 'color': Colors.greenAccent},
+      {'name': 'Blue', 'color': Colors.blueAccent},
+      {'name': 'Pink', 'color': Colors.pinkAccent},
+      {'name': 'Purple', 'color': Colors.purpleAccent},
+      {'name': 'Remove', 'color': Colors.transparent},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Highlight Selected Text', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: colors.map((c) {
+                final isTransparent = c['color'] == Colors.transparent;
+                return GestureDetector(
+                  onTap: () async {
+                    Navigator.pop(context);
+                    if (isTransparent) {
+                      await ref.read(bibleRepositoryProvider).deleteTextHighlight(verse.id, start, end);
+                    } else {
+                      final colorStr = '#${(c['color'] as Color).value.toRadixString(16).padLeft(8, '0').substring(2)}';
+                      await ref.read(bibleRepositoryProvider).saveTextHighlight(verse.id, start, end, colorStr);
+                    }
+                    ref.invalidate(textHighlightsProvider);
+                  },
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: c['color'] as Color,
+                          shape: BoxShape.circle,
+                          border: isTransparent ? Border.all(color: Colors.grey) : null,
+                        ),
+                        child: isTransparent ? const Icon(Icons.close, size: 20) : null,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(c['name'] as String, style: const TextStyle(fontSize: 10)),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final versesAsync = ref.watch(chaptersVersesProviderFamily(ChaptersVersesParams(widget.bookId, widget.chapter)));
     final notesAsync = ref.watch(notesProvider);
     final bookmarkIdsAsync = ref.watch(bookmarkIdsProvider);
+    final textHighlightsAsync = ref.watch(textHighlightsProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final selectedVerse = ref.watch(selectedVerseProvider);
@@ -450,6 +614,7 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
 
         final notes = notesAsync.maybeWhen(data: (d) => d, orElse: () => <int, String>{});
         final bookmarkIds = bookmarkIdsAsync.maybeWhen(data: (d) => d, orElse: () => <int>{});
+        final textHighlights = textHighlightsAsync.maybeWhen(data: (d) => d, orElse: () => <int, List<TextHighlight>>{});
 
         return ListView.builder(
           controller: _scrollController,
@@ -460,50 +625,53 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
             final isSelected = selectedVerse == verse.verse;
             final hasNote = notes.containsKey(verse.id);
             final isBookmarked = bookmarkIds.contains(verse.id);
+            final verseHighlights = textHighlights[verse.id] ?? [];
 
             return InkWell(
               onTap: () => _showVerseActions(context, ref, verse),
               borderRadius: BorderRadius.circular(8),
-              child: AnimatedContainer(
-                key: _verseKeys[verse.verse],
-                duration: const Duration(milliseconds: 500),
-                margin: const EdgeInsets.only(bottom: 16.0),
-                padding: const EdgeInsets.all(8.0),
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.green.withOpacity(0.1) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    RichText(
-                      text: TextSpan(
-                        style: GoogleFonts.getFont(
-                          fontFamily,
-                          fontSize: fontSize,
-                          height: 1.6,
-                          color: theme.textTheme.bodyLarge?.color ?? Colors.black,
-                        ),
-                        children: [
-                          TextSpan(
-                            text: '${verse.verse} ',
-                            style: TextStyle(
-                              fontSize: fontSize * 0.9,
-                              fontWeight: FontWeight.bold,
-                              color: isSelected ? const Color(0xFF4DB66A) : (theme.textTheme.bodyLarge?.color ?? Colors.black),
-                            ),
+              child: SelectionArea(
+                child: AnimatedContainer(
+                  key: _verseKeys[verse.verse],
+                  duration: const Duration(milliseconds: 500),
+                  margin: const EdgeInsets.only(bottom: 4.0),
+                  padding: const EdgeInsets.all(8.0),
+                  decoration: BoxDecoration(
+                    color: isSelected ? Colors.green.withOpacity(0.1) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SelectableText.rich(
+                        _buildVerseText(
+                          verse,
+                          verseHighlights,
+                          GoogleFonts.getFont(
+                            fontFamily,
+                            fontSize: fontSize,
+                            height: 1.6,
+                            color: theme.textTheme.bodyLarge?.color ?? Colors.black,
                           ),
-                          ...verse.segments.map((segment) {
-                            return TextSpan(
-                              text: segment.text,
-                              style: TextStyle(
-                                color: segment.isJesusWords ? Colors.red.shade700 : null,
-                              ),
-                            );
-                          }),
-                        ],
+                          isSelected,
+                          const Color(0xFF4DB66A),
+                        ),
+                        onTap: () => _showVerseActions(context, ref, verse),
+                        contextMenuBuilder: (context, editableTextState) {
+                          final List<ContextMenuButtonItem> buttonItems = editableTextState.contextMenuButtonItems;
+                          buttonItems.insert(0, ContextMenuButtonItem(
+                            label: 'Highlight',
+                            onPressed: () {
+                              editableTextState.hideToolbar();
+                              _handleSelection(verse, editableTextState.textEditingValue.selection);
+                            },
+                          ));
+                          return AdaptiveTextSelectionToolbar.buttonItems(
+                            anchors: editableTextState.contextMenuAnchors,
+                            buttonItems: buttonItems,
+                          );
+                        },
                       ),
-                    ),
                     if (hasNote || isBookmarked)
                       Padding(
                         padding: const EdgeInsets.only(top: 4.0),
@@ -516,11 +684,12 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
                               Icon(Icons.note_alt, size: 14, color: Colors.blue.withOpacity(0.7)),
                           ],
                         ),
-                      ),
+                    ),
                   ],
                 ),
               ),
-            );
+            ),
+          );
           },
         );
       },

@@ -69,10 +69,26 @@ class HomeContent extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final historyAsync = ref.watch(historyProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Bible SOS')),
+      appBar: AppBar(
+        centerTitle: true,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Sesotho Bible'),
+            Text(
+              'Buka ea khale',
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontSize: 12,
+                color: theme.textTheme.bodySmall?.color?.withOpacity(0.6),
+              ),
+            ),
+          ],
+        ),
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
