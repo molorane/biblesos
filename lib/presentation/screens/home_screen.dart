@@ -10,6 +10,7 @@ import 'package:biblesos/presentation/screens/reader_screen.dart';
 import 'package:biblesos/presentation/screens/settings_screen.dart';
 import 'package:biblesos/presentation/screens/converts_screen.dart';
 import 'package:biblesos/presentation/screens/tsa_sione_screen.dart';
+import 'package:biblesos/presentation/screens/church_hymns_screen.dart';
 
 class MainNavigator extends ConsumerStatefulWidget {
   const MainNavigator({super.key});
@@ -270,7 +271,12 @@ class QuickAccessMenu extends StatelessWidget {
         label: 'Hymns',
         icon: Icons.music_note_outlined,
         color: const Color(0xFF7ED321),
-        onTap: () {},
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ChurchHymnsScreen()),
+          );
+        },
       ),
       _MenuItem(
         label: 'Tsa Sione',

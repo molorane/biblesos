@@ -26,8 +26,23 @@ final hymnSearchQueryProvider = NotifierProvider<HymnSearchQueryNotifier, String
   HymnSearchQueryNotifier.new,
 );
 
-class TsaSioneScreen extends ConsumerWidget {
+
+class TsaSioneScreen extends ConsumerStatefulWidget {
   const TsaSioneScreen({super.key});
+
+  @override
+  ConsumerState<TsaSioneScreen> createState() => _TsaSioneScreenState();
+}
+
+class _TsaSioneScreenState extends ConsumerState<TsaSioneScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Reset search query when screen is initialized
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(hymnSearchQueryProvider.notifier).set('');
+    });
+  }
 
   Map<String, String> _getHymns() {
     return {
@@ -490,7 +505,7 @@ class TsaSioneScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final viewMode = ref.watch(hymnViewModeProvider);
     final searchQuery = ref.watch(hymnSearchQueryProvider);
     final theme = Theme.of(context);
