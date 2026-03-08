@@ -71,6 +71,7 @@ class HomeContent extends ConsumerWidget {
         child: Column(
           children: [
             const VerseOfTheDayCard(),
+            const QuickAccessMenu(),
             const SizedBox(height: 24),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -269,4 +270,139 @@ class VerseOfTheDayCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class QuickAccessMenu extends StatelessWidget {
+  const QuickAccessMenu({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final menuItems = [
+      _MenuItem(
+        label: 'Doctrines',
+        icon: Icons.account_balance_outlined,
+        color: const Color(0xFF4A90E2),
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Doctrines page coming soon')),
+          );
+        },
+      ),
+      _MenuItem(
+        label: 'Converts',
+        icon: Icons.person_add_outlined,
+        color: const Color(0xFFF5A623),
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Converts page coming soon')),
+          );
+        },
+      ),
+      _MenuItem(
+        label: 'Hymns',
+        icon: Icons.music_note_outlined,
+        color: const Color(0xFF7ED321),
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Hymns page coming soon')),
+          );
+        },
+      ),
+      _MenuItem(
+        label: 'Tsa Sione',
+        icon: Icons.library_music_outlined,
+        color: const Color(0xFFBD10E0),
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Tsa Sione page coming soon')),
+          );
+        },
+      ),
+    ];
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
+        ),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+        ],
+      ),
+      child: GridView.count(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 1.6,
+        children: menuItems.map((item) => _buildMenuTile(context, item, isDark)).toList(),
+      ),
+    );
+  }
+
+  Widget _buildMenuTile(BuildContext context, _MenuItem item, bool isDark) {
+    return InkWell(
+      onTap: item.onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: item.color.withOpacity(isDark ? 0.08 : 0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: item.color.withOpacity(isDark ? 0.2 : 0.1),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: item.color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(item.icon, color: item.color, size: 24),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              item.label,
+              style: GoogleFonts.inter(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white.withOpacity(0.9) : Colors.black87,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MenuItem {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  _MenuItem({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
 }
