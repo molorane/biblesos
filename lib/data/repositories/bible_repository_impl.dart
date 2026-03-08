@@ -16,6 +16,7 @@ abstract class BibleRepository {
   Future<List<Map<String, dynamic>>> getHistory();
   Future<int> getChapterCount(int bookId);
   Future<int> getVerseCount(int bookId, int chapter);
+  Future<Map<int, String>> getChapterNotes(int bookId, int chapter);
 }
 
 class BibleRepositoryImpl implements BibleRepository {
@@ -115,5 +116,10 @@ class BibleRepositoryImpl implements BibleRepository {
       return maps.first['content'] as String;
     }
     return null;
+  }
+
+  @override
+  Future<Map<int, String>> getChapterNotes(int bookId, int chapter) async {
+    return await _dbService.getChapterNotes(bookId, chapter);
   }
 }

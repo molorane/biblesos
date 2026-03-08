@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:biblesos/domain/entities/bible_models.dart';
 import 'package:biblesos/presentation/providers/bible_providers.dart';
 import 'package:biblesos/presentation/screens/select_scripture_screen.dart';
 import 'package:biblesos/data/storage_service.dart';
 import 'package:biblesos/data/database_service.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ReaderScreen extends ConsumerStatefulWidget {
   const ReaderScreen({super.key});
@@ -295,10 +298,136 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
     });
   }
 
+  void _showVerseActions(BuildContext context, WidgetRef ref, Verse verse) {
+    final theme = Theme.of(context);
+    final repo = ref.read(bibleRepositoryProvider);
+    final isBookmarked = ref.read(bookmarkIdsProvider).maybeWhen(
+      data: (ids) => ids.contains(verse.id),
+      orElse: () => false,
+    );
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.dividerColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Text(
+                '${verse.book} ${verse.chapter}:${verse.verse}',
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+            ListTile(
+              leading: Icon(isBookmarked ? Icons.bookmark : Icons.bookmark_border_outlined),
+              title: Text(isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'),
+              onTap: () async {
+                await repo.toggleBookmark(verse.id);
+                ref.invalidate(bookmarksProvider);
+                if (context.mounted) Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.copy_outlined),
+              title: const Text('Copy to Clipboard'),
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: '${verse.displayScripture}\n\n${verse.book} ${verse.chapter}:${verse.verse}'));
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Copied'), duration: Duration(seconds: 1)),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.share_outlined),
+              title: const Text('Share Scripture'),
+              onTap: () {
+                Share.share('"${verse.displayScripture}"\n\n${verse.book} ${verse.chapter}:${verse.verse}\n\nShared from Bible SOS');
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.note_alt_outlined),
+              title: const Text('Take a Note'),
+              onTap: () async {
+                Navigator.pop(context);
+                final note = await repo.getNote(verse.id);
+                if (context.mounted) {
+                  _showNoteDialog(context, ref, verse, note);
+                }
+              },
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showNoteDialog(BuildContext context, WidgetRef ref, Verse verse, String? existingNote) {
+    final controller = TextEditingController(text: existingNote);
+    final theme = Theme.of(context);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Note: ${verse.book} ${verse.chapter}:${verse.verse}'),
+        content: TextField(
+          controller: controller,
+          maxLines: 5,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'Type your note here...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4DB66A),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              await ref.read(bibleRepositoryProvider).saveNote(verse.id, controller.text);
+              ref.invalidate(notesProvider);
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Note saved')));
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final versesAsync = ref.watch(chaptersVersesProviderFamily(ChaptersVersesParams(widget.bookId, widget.chapter)));
+    final notesAsync = ref.watch(notesProvider);
+    final bookmarkIdsAsync = ref.watch(bookmarkIdsProvider);
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final selectedVerse = ref.watch(selectedVerseProvider);
     final fontSize = ref.watch(readerFontSizeProvider);
     final fontFamily = ref.watch(readerFontFamilyProvider);
@@ -319,6 +448,9 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
           _verseKeys[verse.verse] ??= GlobalKey();
         }
 
+        final notes = notesAsync.maybeWhen(data: (d) => d, orElse: () => <int, String>{});
+        final bookmarkIds = bookmarkIdsAsync.maybeWhen(data: (d) => d, orElse: () => <int>{});
+
         return ListView.builder(
           controller: _scrollController,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -326,41 +458,65 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
           itemBuilder: (context, index) {
             final verse = verses[index];
             final isSelected = selectedVerse == verse.verse;
+            final hasNote = notes.containsKey(verse.id);
+            final isBookmarked = bookmarkIds.contains(verse.id);
 
-            return AnimatedContainer(
-              key: _verseKeys[verse.verse],
-              duration: const Duration(milliseconds: 500),
-              margin: const EdgeInsets.only(bottom: 16.0),
-              padding: const EdgeInsets.all(8.0),
-              decoration: BoxDecoration(
-                color: isSelected ? Colors.green.withOpacity(0.1) : Colors.transparent,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: RichText(
-                text: TextSpan(
-                  style: GoogleFonts.getFont(
-                    fontFamily,
-                    fontSize: fontSize,
-                    height: 1.6,
-                    color: theme.textTheme.bodyLarge?.color ?? Colors.black,
-                  ),
+            return InkWell(
+              onTap: () => _showVerseActions(context, ref, verse),
+              borderRadius: BorderRadius.circular(8),
+              child: AnimatedContainer(
+                key: _verseKeys[verse.verse],
+                duration: const Duration(milliseconds: 500),
+                margin: const EdgeInsets.only(bottom: 16.0),
+                padding: const EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.green.withOpacity(0.1) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TextSpan(
-                      text: '${verse.verse} ',
-                      style: TextStyle(
-                        fontSize: fontSize * 0.9,
-                        fontWeight: FontWeight.bold,
-                        color: isSelected ? const Color(0xFF4DB66A) : (theme.textTheme.bodyLarge?.color ?? Colors.black),
+                    RichText(
+                      text: TextSpan(
+                        style: GoogleFonts.getFont(
+                          fontFamily,
+                          fontSize: fontSize,
+                          height: 1.6,
+                          color: theme.textTheme.bodyLarge?.color ?? Colors.black,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: '${verse.verse} ',
+                            style: TextStyle(
+                              fontSize: fontSize * 0.9,
+                              fontWeight: FontWeight.bold,
+                              color: isSelected ? const Color(0xFF4DB66A) : (theme.textTheme.bodyLarge?.color ?? Colors.black),
+                            ),
+                          ),
+                          ...verse.segments.map((segment) {
+                            return TextSpan(
+                              text: segment.text,
+                              style: TextStyle(
+                                color: segment.isJesusWords ? Colors.red.shade700 : null,
+                              ),
+                            );
+                          }),
+                        ],
                       ),
                     ),
-                    ...verse.segments.map((segment) {
-                      return TextSpan(
-                        text: segment.text,
-                        style: TextStyle(
-                          color: segment.isJesusWords ? Colors.red.shade700 : null,
+                    if (hasNote || isBookmarked)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4.0),
+                        child: Row(
+                          children: [
+                            if (isBookmarked)
+                              Icon(Icons.bookmark, size: 14, color: Colors.orange.withOpacity(0.7)),
+                            if (isBookmarked && hasNote) const SizedBox(width: 8),
+                            if (hasNote)
+                              Icon(Icons.note_alt, size: 14, color: Colors.blue.withOpacity(0.7)),
+                          ],
                         ),
-                      );
-                    }),
+                      ),
                   ],
                 ),
               ),

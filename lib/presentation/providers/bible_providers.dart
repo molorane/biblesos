@@ -135,6 +135,11 @@ final bookmarksProvider = FutureProvider<List<Verse>>((ref) async {
   return await repository.getBookmarks();
 });
 
+final bookmarkIdsProvider = FutureProvider<Set<int>>((ref) async {
+  final bookmarks = await ref.watch(bookmarksProvider.future);
+  return bookmarks.map((v) => v.id).toSet();
+});
+
 final historyProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final repository = ref.watch(bibleRepositoryProvider);
   return await repository.getHistory();
@@ -157,6 +162,15 @@ final highlightsProvider = FutureProvider<Map<int, String>>((ref) async {
   
   final repository = ref.watch(bibleRepositoryProvider);
   return await repository.getHighlights(bookId, chapter);
+});
+
+final notesProvider = FutureProvider<Map<int, String>>((ref) async {
+  final bookId = ref.watch(selectedBookIdProvider);
+  final chapter = ref.watch(selectedChapterProvider);
+  if (bookId == null) return {};
+  
+  final repository = ref.watch(bibleRepositoryProvider);
+  return await repository.getChapterNotes(bookId, chapter);
 });
 
 // Reader UI Settings

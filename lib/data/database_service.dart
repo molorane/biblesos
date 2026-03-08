@@ -38,13 +38,45 @@ class DatabaseService {
       // Opening existing database
     }
 
-    // open the database
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           await db.execute('CREATE INDEX IF NOT EXISTS idx_bible_book_chapter ON bible (book, chapter)');
+        }
+        if (oldVersion < 3) {
+          // User data tables
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS bookmarks (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              verse_id INTEGER UNIQUE
+            )
+          ''');
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS notes (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              verse_id INTEGER UNIQUE,
+              content TEXT
+            )
+          ''');
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS highlights (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              verse_id INTEGER UNIQUE,
+              color TEXT
+            )
+          ''');
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS history (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              book_id INTEGER,
+              book_name TEXT,
+              chapter INTEGER,
+              timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+              UNIQUE(book_id, chapter)
+            )
+          ''');
         }
       },
       onCreate: (db, version) async {
@@ -198,5 +230,16 @@ class DatabaseService {
     ''', [bookId, chapter]);
     
     return {for (var m in maps) m['verse_id'] as int: m['color'] as String};
+  }
+
+  Future<Map<int, String>> getChapterNotes(int bookId, int chapter) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT n.verse_id, n.content FROM notes n
+      JOIN bible s ON n.verse_id = s.rowid
+      WHERE s.book = ? AND s.chapter = ?
+    ''', [bookId, chapter]);
+    
+    return {for (var m in maps) m['verse_id'] as int: m['content'] as String};
   }
 }
