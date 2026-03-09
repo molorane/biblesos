@@ -32,6 +32,13 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: Text(_themeModeName(themeMode)),
             onTap: () => _showThemeDialog(context, ref, themeMode),
           ),
+          SwitchListTile(
+            secondary: const Icon(Icons.format_color_text, color: Colors.red),
+            title: const Text('Words of Christ in Red'),
+            subtitle: const Text('Display Jesus\' words in red color'),
+            value: ref.watch(wordsOfChristInRedProvider),
+            onChanged: (value) => ref.read(wordsOfChristInRedProvider.notifier).set(value),
+          ),
           const Divider(),
           Padding(
             padding: const EdgeInsets.all(16.0),

@@ -427,6 +427,7 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
     TextStyle baseStyle,
     bool isSelected,
     Color activeGreen,
+    bool wordsOfChristInRed,
   ) {
     final String text = verse.displayScripture;
     final List<TextSpan> finalSpans = [];
@@ -435,9 +436,9 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
     finalSpans.add(TextSpan(
       text: '${verse.verse} ',
       style: baseStyle.copyWith(
-        fontSize: baseStyle.fontSize! * 0.9,
+        fontSize: baseStyle.fontSize! * 0.75,
         fontWeight: FontWeight.bold,
-        color: isSelected ? activeGreen : null,
+        color: isSelected ? activeGreen : Colors.red.shade900,
       ),
     ));
 
@@ -446,7 +447,9 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
       for (var segment in verse.segments) {
         finalSpans.add(TextSpan(
           text: segment.text,
-          style: TextStyle(color: segment.isJesusWords ? Colors.red.shade700 : null),
+          style: TextStyle(
+            color: (segment.isJesusWords && wordsOfChristInRed) ? Colors.red.shade700 : null,
+          ),
         ));
       }
       return TextSpan(children: finalSpans, style: baseStyle);
@@ -462,7 +465,9 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
     for (var segment in verse.segments) {
       final int segmentStart = currentGlobalOffset;
       final int segmentEnd = currentGlobalOffset + segment.text.length;
-      final TextStyle segmentStyle = TextStyle(color: segment.isJesusWords ? Colors.red.shade700 : null);
+      final TextStyle segmentStyle = TextStyle(
+        color: (segment.isJesusWords && wordsOfChristInRed) ? Colors.red.shade700 : null,
+      );
 
       // Find highlights that overlap with this segment
       final segmentHighlights = sortedHighlights.where((h) => h.startOffset < segmentEnd && h.endOffset > segmentStart).toList();
@@ -595,6 +600,7 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
     final selectedVerse = ref.watch(selectedVerseProvider);
     final fontSize = ref.watch(readerFontSizeProvider);
     final fontFamily = ref.watch(readerFontFamilyProvider);
+    final wordsOfChristInRed = ref.watch(wordsOfChristInRedProvider);
 
     // Listen to verse changes to trigger scrolling
     ref.listen<int>(selectedVerseProvider, (previous, next) {
@@ -655,6 +661,7 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
                           ),
                           isSelected,
                           const Color(0xFF4DB66A),
+                          wordsOfChristInRed,
                         ),
                         onTap: () => _showVerseActions(context, ref, verse),
                         contextMenuBuilder: (context, editableTextState) {

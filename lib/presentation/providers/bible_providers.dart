@@ -218,3 +218,19 @@ class ReaderFontFamilyNotifier extends Notifier<String> {
 final readerFontFamilyProvider = NotifierProvider<ReaderFontFamilyNotifier, String>(
   ReaderFontFamilyNotifier.new,
 );
+
+class WordsOfChristInRedNotifier extends Notifier<bool> {
+  @override
+  bool build() {
+    return StorageService.getBool(StorageService.keyWordsOfChristInRed, defaultValue: true);
+  }
+
+  void set(bool value) async {
+    state = value;
+    await StorageService.setBool(StorageService.keyWordsOfChristInRed, value);
+  }
+}
+
+final wordsOfChristInRedProvider = NotifierProvider<WordsOfChristInRedNotifier, bool>(
+  WordsOfChristInRedNotifier.new,
+);

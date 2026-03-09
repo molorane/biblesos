@@ -26,10 +26,14 @@ class StorageService {
   static double? getDouble(String key) => settingsBox.get(key);
   static Future<void> setDouble(String key, double value) => settingsBox.put(key, value);
 
+  static bool getBool(String key, {bool defaultValue = false}) => settingsBox.get(key) ?? defaultValue;
+  static Future<void> setBool(String key, bool value) => settingsBox.put(key, value);
+
   // Last Read helpers
   static const String keyLastBookId = 'last_book_id';
   static const String keyLastChapter = 'last_chapter';
   static const String keyLastVerse = 'last_verse';
+  static const String keyWordsOfChristInRed = 'words_of_christ_in_red';
 
   static int getLastBookId() => getInt(keyLastBookId) ?? 1; // Default to Genesis
   static int getLastChapter() => getInt(keyLastChapter) ?? 1;
