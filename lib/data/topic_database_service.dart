@@ -50,4 +50,15 @@ class TopicDatabaseService {
     );
     return maps.map((m) => TopicContent.fromMap(m)).toList();
   }
+
+  Future<List<Topic>> searchTopics(String query) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'k_word',
+      where: 'text LIKE ?',
+      whereArgs: ['%$query%'],
+      orderBy: 'text ASC',
+    );
+    return maps.map((m) => Topic.fromMap(m)).toList();
+  }
 }

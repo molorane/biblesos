@@ -250,3 +250,21 @@ final topicContentProvider = FutureProvider.family<List<TopicContent>, int>((ref
   final repository = ref.watch(topicRepositoryProvider);
   return await repository.getTopicContent(topicId);
 });
+
+class TopicSearchQueryNotifier extends Notifier<String> {
+  @override
+  String build() => '';
+  void set(String query) => state = query;
+}
+
+final topicSearchQueryProvider = NotifierProvider<TopicSearchQueryNotifier, String>(
+  TopicSearchQueryNotifier.new,
+);
+
+final searchTopicsProvider = FutureProvider<List<Topic>>((ref) async {
+  final query = ref.watch(topicSearchQueryProvider);
+  if (query.isEmpty) return [];
+  
+  final repository = ref.watch(topicRepositoryProvider);
+  return await repository.searchTopics(query);
+});

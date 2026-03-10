@@ -13,6 +13,8 @@ class AllTopicsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final topicsAsync = ref.watch(allTopicsProvider);
+    final searchQuery = ref.watch(topicSearchQueryProvider);
+    final searchResultsAsync = ref.watch(searchTopicsProvider);
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF8F9FA),
@@ -38,6 +40,7 @@ class AllTopicsScreen extends ConsumerWidget {
                   ),
                 ),
                 child: TextField(
+                  onChanged: (value) => ref.read(topicSearchQueryProvider.notifier).set(value),
                   decoration: InputDecoration(
                     hintText: 'Search Topics or Questions',
                     hintStyle: GoogleFonts.inter(
@@ -88,25 +91,47 @@ class AllTopicsScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  topicsAsync.when(
-                    data: (topics) => Wrap(
-                      spacing: 8,
-                      runSpacing: 12,
-                      children: topics.map((topic) => _TopicChip(
-                        topic: topic,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => TopicDetailScreen(topic: topic),
+                  searchQuery.isEmpty
+                    ? topicsAsync.when(
+                        data: (topics) => Wrap(
+                          spacing: 8,
+                          runSpacing: 12,
+                          children: topics.map((topic) => _TopicChip(
+                            topic: topic,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => TopicDetailScreen(topic: topic),
+                                ),
+                              );
+                            },
+                          )).toList(),
+                        ),
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (err, stack) => Text('Error loading topics: $err'),
+                      )
+                    : searchResultsAsync.when(
+                        data: (topics) => topics.isEmpty
+                          ? const Text('No results found')
+                          : Wrap(
+                              spacing: 8,
+                              runSpacing: 12,
+                              children: topics.map((topic) => _TopicChip(
+                                topic: topic,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => TopicDetailScreen(topic: topic),
+                                    ),
+                                  );
+                                },
+                              )).toList(),
                             ),
-                          );
-                        },
-                      )).toList(),
-                    ),
-                    loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (err, stack) => Text('Error loading topics: $err'),
-                  ),
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (err, stack) => Text('Error searching: $err'),
+                      ),
                 ],
               ),
             ),
