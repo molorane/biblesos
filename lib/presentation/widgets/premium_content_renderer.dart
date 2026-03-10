@@ -47,7 +47,7 @@ class PremiumContentRenderer extends StatelessWidget {
 
     for (final block in blocks) {
       if (block.type == ContentType.text ||
-          block.type == ContentType.boldRed ||
+          block.type == ContentType.inlineAccent ||
           block.type == ContentType.bibleReference) {
         currentInlineGroup.add(block);
       } else {
@@ -223,13 +223,13 @@ class PremiumContentRenderer extends StatelessWidget {
             ),
           ),
         );
-      case ContentType.boldRed:
+      case ContentType.inlineAccent:
         return Text(
           block.text,
           style: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: isDark ? Colors.red.shade300 : Colors.red.shade700,
+            color: isDark ? Colors.indigo.shade300 : const Color(0xFF303F9F),
             height: 1.5,
           ),
         );

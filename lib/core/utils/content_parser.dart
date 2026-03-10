@@ -6,7 +6,7 @@ enum ContentType {
   verseText,
   quote,
   listItem,
-  boldRed
+  inlineAccent
 }
 
 class ContentBlock {
@@ -43,7 +43,7 @@ class ContentParser {
         case 'S':
         case 's': type = ContentType.subHeading; break;
         case 'B': type = ContentType.bibleReference; break;
-        case 'b': type = ContentType.boldRed; break;
+        case 'b': type = ContentType.inlineAccent; break;
         case 'T':
         case 't': type = ContentType.verseText; break;
         case 'Q':
