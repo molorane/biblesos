@@ -11,7 +11,6 @@ import 'package:biblesos/presentation/screens/settings_screen.dart';
 import 'package:biblesos/presentation/screens/converts_screen.dart';
 import 'package:biblesos/presentation/screens/tsa_sione_screen.dart';
 import 'package:biblesos/presentation/screens/church_hymns_screen.dart';
-import 'package:biblesos/presentation/screens/history_screen.dart';
 import 'package:biblesos/presentation/screens/topics_screen.dart';
 import 'package:biblesos/presentation/screens/doctrines_screen.dart';
 import 'package:share_plus/share_plus.dart';
@@ -109,8 +108,18 @@ class VerseOfTheDayCard extends ConsumerWidget {
   const VerseOfTheDayCard({super.key});
 
   static const List<String> _bgImages = [
-    '1.jpg', '2.jpg', '5.jpg', '7.jpg', '8.jpg', '9.jpg',
-    '10.jpg', '11.jpg', '12.jpg', '13.jpg', '14.jpg', '15.jpg'
+    '1.jpg',
+    '2.jpg',
+    '5.jpg',
+    '7.jpg',
+    '8.jpg',
+    '9.jpg',
+    '10.jpg',
+    '11.jpg',
+    '12.jpg',
+    '13.jpg',
+    '14.jpg',
+    '15.jpg',
   ];
 
   String _getSelectedImage() {
@@ -182,9 +191,7 @@ class VerseOfTheDayCard extends ConsumerWidget {
                 child: ClipRect(
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(
-                      color: Colors.white.withOpacity(0.1),
-                    ),
+                    child: Container(color: Colors.white.withOpacity(0.1)),
                   ),
                 ),
               ),
@@ -193,9 +200,16 @@ class VerseOfTheDayCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(top: 24, left: 24, right: 24),
+                    padding: const EdgeInsets.only(
+                      top: 24,
+                      left: 24,
+                      right: 24,
+                    ),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(20),
@@ -247,19 +261,30 @@ class VerseOfTheDayCard extends ConsumerWidget {
                         Row(
                           children: [
                             IconButton(
-                              icon: Icon(Icons.share_outlined, color: Colors.white.withOpacity(0.9), size: 22),
+                              icon: Icon(
+                                Icons.share_outlined,
+                                color: Colors.white.withOpacity(0.9),
+                                size: 22,
+                              ),
                               constraints: const BoxConstraints(),
                               padding: EdgeInsets.zero,
                               onPressed: () {
-                                const verseText = 'Etsoe Morena o ile a rata fatshe hakaalo, a ba a le neela Mora oa hae ea tsoetsoeng a '
+                                const verseText =
+                                    'Etsoe Morena o ile a rata fatshe hakaalo, a ba a le neela Mora oa hae ea tsoetsoeng a '
                                     'le mong, hore e mong le e mong ea lumelang ho eena a se ke a timela, '
                                     'a mpe a be le bophelo bo sa feleng.';
                                 const reference = 'Johanne 3:16';
-                                Share.share('"$verseText"\n\n$reference\nShared from Bible SOS');
+                                Share.share(
+                                  '"$verseText"\n\n$reference\nShared from Bible SOS',
+                                );
                               },
                             ),
                             const SizedBox(width: 20),
-                            Icon(Icons.bookmark_border, color: Colors.white.withOpacity(0.9), size: 22),
+                            Icon(
+                              Icons.bookmark_border,
+                              color: Colors.white.withOpacity(0.9),
+                              size: 22,
+                            ),
                           ],
                         ),
                       ],
@@ -369,7 +394,8 @@ class QuickAccessMenu extends StatelessWidget {
           childAspectRatio: 1.15,
         ),
         itemCount: menuItems.length,
-        itemBuilder: (context, index) => _buildMenuTile(context, menuItems[index], isDark),
+        itemBuilder: (context, index) =>
+            _buildMenuTile(context, menuItems[index], isDark),
       ),
     );
   }

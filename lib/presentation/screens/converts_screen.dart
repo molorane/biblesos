@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:biblesos/core/utils/content_parser.dart';
+import 'package:biblesos/presentation/widgets/premium_content_renderer.dart';
 
 // Provider for selected language ('en' or 'or')
 class ConvertsLanguageNotifier extends Notifier<String> {
@@ -275,37 +277,53 @@ class SeriesDetailScreen extends StatelessWidget {
             return const Center(child: Text('Failed to load content'));
           }
 
+          final blocks = ContentParser.parse(snapshot.data!);
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: GoogleFonts.crimsonText(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF4DB66A),
+                if (blocks.isNotEmpty && blocks[0].type == ContentType.heading) ...[
+                  PremiumContentRenderer(block: blocks[0], isDark: theme.brightness == Brightness.dark),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: 40,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4DB66A).withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  width: 40,
-                  height: 3,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4DB66A).withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(2),
+                  const SizedBox(height: 32),
+                  ...blocks.skip(1).map((block) => PremiumContentRenderer(
+                        block: block,
+                        isDark: theme.brightness == Brightness.dark,
+                      )),
+                ] else ...[
+                  Text(
+                    title,
+                    style: GoogleFonts.crimsonText(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF4DB66A),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 32),
-                Text(
-                  snapshot.data!,
-                  style: GoogleFonts.crimsonText(
-                    fontSize: 19,
-                    height: 1.6,
-                    color: theme.textTheme.bodyLarge?.color?.withOpacity(0.9),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: 40,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4DB66A).withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 32),
+                  ...blocks.map((block) => PremiumContentRenderer(
+                        block: block,
+                        isDark: theme.brightness == Brightness.dark,
+                      )),
+                ],
                 const SizedBox(height: 40),
               ],
             ),

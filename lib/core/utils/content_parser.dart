@@ -4,7 +4,9 @@ enum ContentType {
   subHeading,
   bibleReference,
   verseText,
-  quote
+  quote,
+  listItem,
+  boldRed
 }
 
 class ContentBlock {
@@ -16,63 +18,52 @@ class ContentBlock {
 
 class ContentParser {
   static List<ContentBlock> parse(String content) {
-    List<ContentBlock> blocks = [];
+    if (content.isEmpty) return [];
     
-    // Improved regex to handle:
-    // 1. Standard tags: [B]text[/B]
-    // 2. Typos: [B]text[\B]
-    // 3. Simple closing: [B]text]
-    // 4. Case insensitive: [b]text[/b]
-    final regExp = RegExp(r'\[([HSBTQhsbtq])\](.*?)(?:\[[\\/]\1\]|\])', dotAll: true);
+    List<ContentBlock> blocks = [];
+    final regExp = RegExp(r'\[(H|S|B|b|T|Q|LI)\](.*?)(?:\[[\\/]\1\])', dotAll: true, caseSensitive: false);
     
     int lastMatchEnd = 0;
     
     for (final match in regExp.allMatches(content)) {
-      // Add text before the match as regular text if it's not empty
       if (match.start > lastMatchEnd) {
-        String leadingText = content.substring(lastMatchEnd, match.start).trim();
-        if (leadingText.isNotEmpty) {
-          blocks.add(ContentBlock(ContentType.text, leadingText));
+        String text = content.substring(lastMatchEnd, match.start).trim();
+        if (text.isNotEmpty) {
+          blocks.add(ContentBlock(ContentType.text, text));
         }
       }
       
-      String tag = match.group(1)!.toUpperCase();
-      String text = match.group(2)!.trim();
+      String tag = match.group(1)!;
+      String innerText = match.group(2)!;
       
       ContentType type;
       switch (tag) {
         case 'H':
-          type = ContentType.heading;
-          break;
+        case 'h': type = ContentType.heading; break;
         case 'S':
-          type = ContentType.subHeading;
-          break;
-        case 'B':
-          type = ContentType.bibleReference;
-          break;
+        case 's': type = ContentType.subHeading; break;
+        case 'B': type = ContentType.bibleReference; break;
+        case 'b': type = ContentType.boldRed; break;
         case 'T':
-          type = ContentType.verseText;
-          break;
+        case 't': type = ContentType.verseText; break;
         case 'Q':
-          type = ContentType.quote;
-          break;
-        default:
-          type = ContentType.text;
+        case 'q': type = ContentType.quote; break;
+        case 'LI':
+        case 'li': type = ContentType.listItem; break;
+        default: type = ContentType.text;
       }
       
-      blocks.add(ContentBlock(type, text));
+      blocks.add(ContentBlock(type, innerText));
       lastMatchEnd = match.end;
     }
     
-    // Add remaining text after the last match
     if (lastMatchEnd < content.length) {
-      String trailingText = content.substring(lastMatchEnd).trim();
-      if (trailingText.isNotEmpty) {
-        blocks.add(ContentBlock(ContentType.text, trailingText));
+      String text = content.substring(lastMatchEnd).trim();
+      if (text.isNotEmpty) {
+        blocks.add(ContentBlock(ContentType.text, text));
       }
     }
     
-    // If no tags were found, treat the whole thing as regular text
     if (blocks.isEmpty && content.trim().isNotEmpty) {
       blocks.add(ContentBlock(ContentType.text, content.trim()));
     }
