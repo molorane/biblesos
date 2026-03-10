@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:biblesos/presentation/widgets/premium_hymn_viewer.dart' as viewer;
 
 // View modes: Grid or List
 enum HymnViewMode { grid, list }
@@ -26,25 +27,10 @@ final hymnSearchQueryProvider = NotifierProvider<HymnSearchQueryNotifier, String
   HymnSearchQueryNotifier.new,
 );
 
-
 class TsaSioneScreen extends ConsumerStatefulWidget {
   const TsaSioneScreen({super.key});
 
-  @override
-  ConsumerState<TsaSioneScreen> createState() => _TsaSioneScreenState();
-}
-
-class _TsaSioneScreenState extends ConsumerState<TsaSioneScreen> {
-  @override
-  void initState() {
-    super.initState();
-    // Reset search query when screen is initialized
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(hymnSearchQueryProvider.notifier).set('');
-    });
-  }
-
-  Map<String, String> _getHymns() {
+  static Map<String, String> getHymns() {
     return {
       "1": "Pele Lentswe La Na La Re - T. Arbousset",
       "2": "Ho 'Mopi Wa Batho - E. Casalis",
@@ -158,7 +144,7 @@ class _TsaSioneScreenState extends ConsumerState<TsaSioneScreen> {
       "110": "Ntate, Ha Ke Sa Sepela - S. Rolland",
       "111": "Ke Na Le Modisa - S. Rolland",
       "112": "Lefatshe Lena - Le Ka 'nea'ng? - S. Rolland",
-      "113": "Jesu, Ha Ke Bitsa - S. Rolland",
+      "113": "Jesu, Ha Ke Batle Thuso - A. Mabille",
       "114": "Tlohang Ho 'na, Nyakallo Tsa Lefatshe - S. Rolland",
       "115": "O Modimo Wa Ka, Modimo Wa Topollo! - S. Rolland",
       "116": "Ha Le Lakatsa Ho Tseba - A. Mabille",
@@ -265,224 +251,39 @@ class _TsaSioneScreenState extends ConsumerState<TsaSioneScreen> {
       "214": "Ke Nģalo e Kgethehileng - F. Coillard",
       "215": "Mong 'a Lesedi Rabophelo - S. Rolland",
       "216": "Ke Bone Hape Lesedi - T. Arbousset",
-      "217": "Jesu Naledi Ya Ho Sa - S. Rolland",
-      "218": "Ntat'a Rona Modimo Wa Hloleho - S. Rolland",
-      "219": "Morena E Sa Le Hosasa - L. Duvoisin",
-      "220": "Letsatsi le Phirimile - E. Casalis",
-      "221": "Kea Leboha Modimo - S. Rolland",
-      "222": "Lala Ho Nna - E. Rolland",
-      "223": "Ntat'a Rona Mahodimong - S. Rolland",
-      "224": "Naha Tsohle Bokang Morena Jehova - T. Arbousset",
-      "225": "Alleluya ho Jehova - E. Casalis",
-      "226": "Ho Ntate Mora Le Moya - S. Rolland",
-      "227": "Ntat'a Mohau A Roriswe - S. Rolland",
-      "228": "Re Boke ka Pelo - T. Arbousset",
-      "229": "Kganya E Be Ho Ntate le Ho Mora - A. Mabille",
-      "230": "Kganya letlotlo - E be Tsa Modimo - A. Mabille",
-      "231": "Ho Eena ya ka re Sitsang - F. Coillard",
-      "232": "Ho Ntate, Mora, le Moya - F. Coillard",
-      "233": "Eena ea Dutseng Teroneng - F. Coillard",
-      "234": "Bokang 'Mopi le 'Moloki - S. Rolland",
-      "235": "Bokang Jehova, Modim'a Iseraele - E. Rolland",
-      "236": "O Molemo - F. Coillard",
-      "237": "Hlweko ke ya Morena - F. Coillard",
-      "237A": "Ho Hotle Ho O Tlotla - S. Rolland",
-      "238": "Mohau wa Morena Jesu - F. Coillard",
-      "239": "Na o Hlokile Sebaka - F. Coillard",
-      "240": "Mohau wa Morena Jesu - S. Rolland",
-      "241": "Ea Renang ka Ho sa Feleng - S. Rolland",
-      "242": "Modimo re Felehetse - A. Mabille",
-      "243": "Se 'Makatsang, se Ntlholetseng - F. Coillard",
-      "244": "Latelang Modisa, Modisa ea Molemo - F. Coillard",
-      "245": "Nahathotheng, Moo ke Ntseng ke Lelera - E. Rolland",
-      "246": "Oa Hlaha, O Jesu - E. Rolland",
-      "247": "Jehova Modimo ke Nģosa Kgauhelo - E. Rolland",
-      "248": "Helang, Lona ba Tepeletseng - E. Rolland",
-      "249": "Ke wa'ng Basotho, Mokgosi - A. Mabille",
-      "250": "Faphang Jesu ka Dithoko - F. Coillard",
-      "251": "Jerusalema e Mocha - E. Mabille",
-      "252": "Mpolelleng! Na Lehodimong - F. Coillard",
-      "253": "Moren'a ka, ke sa Bua le Wena - A. Mabille",
-      "254": "Jesu O Shwetse Batho - A. Mabille",
-      "255": "Naha e Teng e Ratehang - A. Mabille",
-      "256": "Rona Re Ratang Jesu - L. Duvoisin",
-      "257": "Matsatsi a Ntse a Feta - A. Mabille",
-      "258": "Hosanna, Hosanna - A. Mabille",
-      "259": "Monghadi Wa Ka Ke Tsietswe - S. Rolland",
-      "260": "Mohau wa Morena Jesu - E. Rolland",
-      "261": "Morena, ka Letsatsi Lena - L. Duvoisin",
-      "262": "Jesu, ke Tla ke Hlomohile - L. Duvoisin",
-      "263": "E Sa Le Ho Qaleng O Nthatile - L. Duvoisin",
-      "264": "Hoja ke Se Na Wena - L. Duvoisin",
-      "265": "Jesu, Moren'a ka - L. Duvoisin",
-      "266": "Hoja Nka Bapa le Jesu - A. Mabille",
-      "267": "Jesu Rato La Hao - A. Mabille",
-      "268": "Sefapanong Ke Boha - A. Maille",
-      "269": "O Halalehile, Modim'o Moholo - A. Mabille",
-      "270": "Ho Jesu Ke Beile - A. Mabille",
-      "271": "Tlo Jesu Se Diehe - A. Mabille",
-      "272": "Bolelang, Taba Tsa Jesu - A. Sello",
-      "273": "Jesu Motsoalle ea Nkileng - A. Mabille",
-      "274": "Moya wa ka, O Mamele Dipina - A. Mabille",
-      "275": "Lemohang Rato La Jesu - A. Mabille",
-      "276": "Jesu O tla Rena Hohle - A. Mabille",
-      "277": "Morena, Banyadi Bana - S. Rolland",
-      "278": "Dintoa Tsee Re Di Pheellang - H. Dieterlen",
-      "279": "Bokang Modimo, Morena - A. Mabille",
-      "280": "Kganya e Be Ho Ntate - A. Mabille",
-      "281": "Ho Konyana ya Modimo - A. Mabille",
-      "282": "Ho Wena Re Tlisa Dillo Tsa Rona - L. Duvoisin",
-      "282A": "Re Siele Kgotso ya Hao - S. Rolland",
-      "283": "Mamelang Mantswe A Matle - A. Mabille",
-      "284": "Modimo O k’o Rute Dipelo Tsa Rona - A. Mabille",
-      "285": "Lebitso La Jesu Hase Le Ho Rateha - L. Duvoisin",
-      "286": "Raohang Masole - A. Mabille",
-      "287": "Pula! Pula! Jehova - F. Ellenberger",
-      "288": "Fatsheng Lena Hase Hae Ha Eso - A. Mabille",
-      "289": "Ntataise, Modisa ea Molemo - A. Mabille",
-      "290": "Letsatsi La Hao, Morena - A. Mabille",
-      "291": "Ke Tla Tseba Joang - A. Mabille",
-      "292": "Ho Phela Ho Morena Wa Ka - A. Mabille",
-      "293": "Kgotso, kgotso! - A. Mabille",
-      "294": "Ke Ne Ke Tla Re'ng Ha Jesu A Ka Mpotsa - A. Mabille",
-      "295": "Utloa, Morutuwa Wa Morena - A. Mabille",
-      "296": "Modimo o Mosa - A. Mabille",
-      "297": "Ho Re Chabetse Kajeno - A. Mabille",
-      "298": "Tlong Baahi Ba Lesotho - A. Mabille",
-      "299": "Se Kgathaleng Bana Beso - F. Coillard",
-      "300": "Ke Buletswe Phatlalatsa - F. Coillard",
-      "301": "Ke Thabile, Ke Ratoa Ke Ntate - F. Coillard",
-      "302": "Tsoha O Ye Tshimong - F. Coillard",
-      "303": "Ea O Pate Dillo - F. Coillard",
-      "304": "Jo Ke Madimabe Joang - F. Coillard",
-      "305": "Batlang Le Batlisise - F. Coillard",
-      "306": "Na O Tseba Modimo - F. Coillard",
-      "307": "Motse Oo Re O Hlolohetsoeng - F. Coillard",
-      "308": "Ke Se Ke Utloile - F. Coillard",
-      "309": "Ho Fedile Ke Lehlohonolo - F. Coillard",
-      "310": "Fatsheng La Bomadimabe - F. Coillard",
-      "311": "Tlo Hae Tlo Hae - F. Coillard",
-      "312": "Oho Mpolelleng Taba - F. Coillard",
-      "313": "Tsohang, Emelang Jesu - F. Coillard",
-      "314": "Tlong Ho Jesu, Le Tle Kapele - F. Coillard",
-      "315": "Ha Ke Le Tjee, Ke Le Mobe - F. Coillard",
-      "316": "Jesu O Nts'a Bitsa - F. Coillard",
-      "317": "Ke Mang, Ke Mang Monyako - F. Coillard",
-      "318": "Matshwele A Batho Bale - F. Coillard",
-      "319": "Tau Di Ka Lapa - F. Coillard",
-      "320": "Edisang Difahleho - F. Coillard",
-      "321": "Ke O Labalabetse Hakaakang - F. Coillard",
-      "322": "He, ba Nyoriloeng - F. Coillard",
-      "323": "Ke Sikiloe Ke Jesu - F. Coillard",
-      "324": "E, Ka Kgohlong Ya Moriti Wa Lefu - F. Coillard",
-      "325": "Lefatsheng Lena La Basele - F. Coillard",
-      "326": "Ho Se Ho Phethehile - F. Coillard",
-      "327": "Lefifing Le Letsho-letsho - F. Coillard",
-      "328": "E, ke Rongoa Ke Jesu - F. Coillard",
-      "329": "Kenang Bohle, Baka Se Sa Le Teng - F. Coillard",
-      "330": "Tadima Ho Jesu Wena Molahlehi - F. Coillard",
-      "331": "Ke Lehlahana Feela La Morena - F. Coillard",
-      "332": "Ke Mahlaku Feela-feela - F. Coillard",
-      "333": "Jesu Kea Baba Kea O Llela - F. Coillard",
-      "334": "Ke Fumane Bofihla - F. Coillard",
-      "335": "Phallang Le Phallele - F. Coillard",
-      "336": "Modimo O Re Ratile - F. Coillard",
-      "337": "Thabang Le Nyakalle, Ba Lehodimo - F. Coillard",
-      "338": "Ka Hlahlathela Feelleng Halelele - F. Coillard",
-      "339": "Ke Bodiba Bo Bilohang - F. Coillard",
-      "340": "Ha O Jala E Sa Le Meso - F. Coillard",
-      "341": "Lekgolo la Dinku Kaofela - F. Coillard",
-      "342": "O Mohau Wa Modimo - F. Coillard",
-      "343": "Jo Sebe se sa Hlakoheng - F. Coillard",
-      "344": "Lehae Le Letle ke Lane - F. Coillard",
-      "345": "Ntate Lerato la Hao le Lekaakang - F. Coillard",
-      "346": "Lekunutung le Morena - F. Coillard",
-      "347": "Bonang, Sona O Fihlile - F. Coillard",
-      "348": "Jo, Kgalefo Ya Modimo E Befile - F. Coillard",
-      "349": "Utloang Utloang Ditaba - F. Coillard",
-      "350": "Jo O Batlile O Dumela - F. Coillard",
-      "351": "Na O Kokomalla'ng - F. Coillard",
-      "352": "O o Motle Hakaakang - F. Coillard",
-      "353": "Na O Hlompheha Hakaakang - F. Coillard",
-      "354": "Pula Tsa Lehlohonolo - F. Coillard",
-      "355": "Jehova, Mo Tsamaise - F. Coillard",
-      "356": "Na Ke Bo-mang Mose Ledibohong - F. Coillard",
-      "357": "Mpheng Mapheo a Tumelo - F. Coillard",
-      "358": "O Nkise Qhobosheaneng - F. Coillard",
-      "359": "O Lefika la Mehleng - F. Coillard",
-      "360": "O Morati Ea Nthatang - F. Coillard",
-      "361": "Se Mphete, Wen'a Ratehang - F. Coillard",
-      "362": "Lentswe La Hao ke Lebone - F. Coillard",
-      "363": "Ruri le nkgapile pelo, - F. Coillard",
-      "364": "Ke Tla Ke Le Feela-feela - F. Coillard",
-      "365": "Helang Chaba tsa Lefatshe - F. Coillard",
-      "366": "Utloang Taba tse Molemo - F. Coillard",
-      "367": "Helang Lona Dihoai tsa Morena - F. Coillard",
-      "368": "Helang Utloang! Mohoo Oa Utloahala - F. Coillard",
-      "369": "Butle, Butle! Bea Pelo, Ngoan'a Ka - F. Coillard",
-      "370": "Ditaba Tse O Imelang - F. Coillard",
-      "371": "Ba Kae Ba Kae Bakotudi - F. Coillard",
-      "372": "Ke Itella Wena - F. Coillard",
-      "373": "Jesu O Nts'a Mpoloka - F. Coillard",
-      "374": "'Mele, Pelo, le Moya - F. Coillard",
-      "375": "Le Hopotse Kae Ba Heso? - F. Coillard",
-      "376": "Re Se Re Tla Ea Robala - F. Coillard",
-      "377": "Utloang Lentswe Lea Tlerola - F. Coillard",
-      "378": "Oho Nkutlwele Bohloko - F. Coillard",
-      "379": "Ho Dula Le Ntate - F. Coillard",
-      "380": "Phumola Dikgororo - F. Coillard",
-      "381": "Utloang Taba e Molemo - F. Coillard",
-      "382": "Jerusalema ea Phatsimang - F. Coillard",
-      "383": "Jo Ho Lefifi Ntate - F. Coillard",
-      "384": "Tlong O Le Tle Joale - F. Coillard",
-      "385": "Le Faneng - F. Coillard",
-      "386": "O Tla Nketela Neng - F. Coillard",
-      "387": "Ke Tsielehile - F. Coillard",
-      "388": "Baratuwa ba Jesu - F. Coillard",
-      "389": "Taba tse Molemo tsa Evangedi - F. Coillard",
-      "390": "Le Chabile le Chabile - F. Coillard",
-      "391": "Mohlomohi Fatsheng Lena - F. Coillard",
-      "392": "Moren'a Ka ea Ratehang - F. Coillard",
-      "393": "Seforo Ke se Fumane - F. Coillard",
-      "394": "Pholosa Ntate Pholosa - F. Coillard",
-      "395": "Wena Jesu Wena Feela - F. Coillard",
-      "396": "Dumela Bethel Wa Rona - F. Coillard",
-      "397": "Lefifing la Mahlomola - F. Coillard",
-      "398": "O Baeti ba Hlahlathang - F. Coillard",
-      "399": "Ka Re Ke Tla Iponela - F. Coillard",
-      "400": "E Ke Se ke Bone - F. Coillard",
-      "401": "Ha ke Qala Ho Phaphama - F. Coillard",
-      "402": "Na ke Ntho e Ka o Kgahlang - F. Coillard",
-      "403": "Ke Bone ke Bone Tsela - F. Coillard",
-      "404": "Jesu a Shoa 'me a Tsoha Bafung - F. Coillard",
-      "405": "Ka Dinako Tsohle - F. Coillard",
-      "406": "Lehodimong Hae le Letle - F. Coillard",
-      "407": "Oa Nkalosa Ho Ntekane - F. Coillard",
-      "408": "Tumelo Ke Na le Yona - F. Coillard",
-      "409": "Ke tla Bona kae Tumelo - F. Coillard",
-      "410": "Jo 'na Lefifi le Letsho - F. Coillard",
-      "411": "Bokang Bokang 'Moloki wa Rona Jesu - F. Coillard",
-      "412": "Nyakallang Bohle 'Moloki O Tlile - F. Coillard",
-      "413": "E O Motle oa Rateha - F. Coillard",
-      "414": "Morena Ho Etsahale - F. Coillard",
-      "415": "Ho Rata Ha Hao Morena - F. Coillard",
-      "416": "Jo, Lefifi Le Lekaakang - F. Coillard",
-      "417": "Emmanuele Mong'a Rona - F. Coillard",
-      "418": "Ke Mofero Ke Bofifi Feela - F. Coillard",
-      "419": "Tshepo ya ka Feela-feela - F. Coillard",
-      "420": "Sona, Marung O S'a Hlaha - F. Coillard",
-      "421": "Ha ke Ne ke Itshela ka Dikgapha - F. Coillard",
-      "422": "Modimo, Mong'a Lefatshe - F. Coillard",
-      "423": "Ditshiu, Dinako Tsohle - F. Coillard",
-      "424": "Bakgethoa, Binang Alleluya - F. Coillard",
-      "425": "Lelala O Tswele Pele - F. Coillard",
-      "426": "O Tla Busa, O Tla Busa - F. Coillard",
-      "427": "O Modimo, Re Hloreha Hakaakang? - F. Coillard",
-      "428": "Nkekeletse Ntate - F. Coillard",
-      "429": "Batho Bohle Ba Merabe - F. Coillard",
-      "430": "O o Tsamaye Leseding - F. Coillard",
-      "431": "Na Ke Tla Bolokeha Joang - F. Coillard",
-      "432": "Tsohang, Baahi Ba Lesotho - V. Ellenberger",
+      "400": "Taba Tsa Letsoalo - S. Rolland",
+      "401": "Jesu ke Setshabelo Sa Ka - S. Rolland",
+      "402": "Bonang Lerato La Modimo - S. Rolland",
+      "403": "Hosanna Ho Jesu! - S. Rolland",
+      "404": "Ke Moeti Fatsheng Lena - S. Rolland",
+      "405": "Jesu O Re Lerato - S. Rolland",
+      "406": "Oho! Se Ntebale, Jesu - S. Rolland",
+      "407": "Modimo O Lerato Hakaka - S. Rolland",
+      "408": "Oho! Re Hauhele, Ntate - S. Rolland",
+      "409": "Morena, Re Hopole - S. Rolland",
+      "410": "Oho! Re Boloke, Jesu - S. Rolland",
+      "411": "Jehova O S'a Re Thusitse - S. Rolland",
+      "412": "Jesu O S'a Re Namotse - S. Rolland",
+      "413": "Morena O S'a Re Falotse - S. Rolland",
+      "414": "Jesu O S'a Re Thusitse Ruri - S. Rolland",
+      "415": "Morena O S'a Re Namotse Ruri - S. Rolland",
+      "416": "Jesu O S'a Re Falotse Ruri - S. Rolland",
+      "417": "Morena O S'a Re Thusitse Ruri Hape - S. Rolland",
+      "418": "Jesu O S'a Re Namotse Ruri Hape - S. Rolland",
+      "419": "Morena O S'a Re Falotse Ruri Hape - S. Rolland",
+      "420": "Jesu O S'a Re Thusitse Ruri Hape Hona Joale - S. Rolland",
+      "421": "Morena O S'a Re Namotse Ruri Hape Hona Joale - S. Rolland",
+      "422": "Jesu O S'a Re Falotse Ruri Hape Hona Joale - S. Rolland",
+      "423": "Morena O S'a Re Thusitse Ruri Hape Hona Joale Ruri - S. Rolland",
+      "424": "Jesu O S'a Re Namotse Ruri Hape Hona Joale Ruri - S. Rolland",
+      "425": "Morena O S'a Re Falotse Ruri Hape Hona Joale Ruri - S. Rolland",
+      "426": "Jesu O S'a Re Thusitse Ruri Hape Hona Joale Ruri Hape - S. Rolland",
+      "427": "Morena O S'a Re Namotse Ruri Hape Hona Joale Ruri Hape - S. Rolland",
+      "428": "Jesu O S'a Re Falotse Ruri Hape Hona Joale Ruri Hape - S. Rolland",
+      "429": "Ruri, Jesu Ke 'Moloki - F. Coillard",
+      "430": "Hohle, Hohle, Jesu Ke 'Moloki - F. Coillard",
+      "431": "Mmele, Moya Le Letsoalo - F. Coillard",
+      "432": "Morena, Re Nehe Moya - F. Coillard",
       "433": "Jesu Mong'a Ka O Filwe Borena - F. Coillard",
       "434": "Lefatshe Le Tahang - F. Coillard",
       "435": "Bonang, Rato Le Lekaakang - F. Coillard",
@@ -500,17 +301,30 @@ class _TsaSioneScreenState extends ConsumerState<TsaSioneScreen> {
       "447": "Ke Golgotha - L. Duvoisin",
       "448": "Melomo Ya Rona E Rorise Morena - H. Marzolff",
       "449": "Jehova, Moren'a Topollo Ya Ka - H. Marzolff",
-      "450": "Tla Re Yeng Ba Rategang - Circuit Rider"
+      "450": "Tla Re Yeng Ba Rategang - Circuit Rider",
     };
   }
 
   @override
+  ConsumerState<TsaSioneScreen> createState() => _TsaSioneScreenState();
+}
+
+class _TsaSioneScreenState extends ConsumerState<TsaSioneScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Reset search query when screen is initialized
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(hymnSearchQueryProvider.notifier).set('');
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final viewMode = ref.watch(hymnViewModeProvider);
-    final searchQuery = ref.watch(hymnSearchQueryProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final hymns = _getHymns();
+    final hymns = TsaSioneScreen.getHymns();
+    final searchQuery = ref.watch(hymnSearchQueryProvider);
 
     // Filter hymns based on search query
     final filteredHymns = hymns.entries.where((entry) {
@@ -518,26 +332,32 @@ class _TsaSioneScreenState extends ConsumerState<TsaSioneScreen> {
       return entry.key.contains(query) || entry.value.toLowerCase().contains(query);
     }).toList();
 
+    // Sort filtered hymns numerically
+    filteredHymns.sort((a, b) {
+      final aNum = int.tryParse(a.key) ?? 0;
+      final bNum = int.tryParse(b.key) ?? 0;
+      return aNum.compareTo(bNum);
+    });
+
+    final viewMode = ref.watch(hymnViewModeProvider);
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           'Tsa Sione',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold),
+          style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
         foregroundColor: theme.textTheme.bodyLarge?.color,
         actions: [
           IconButton(
-            icon: Icon(
-              viewMode == HymnViewMode.grid ? Icons.list_alt : Icons.grid_view_outlined,
-              color: theme.iconTheme.color,
-            ),
+            icon: Icon(viewMode == HymnViewMode.grid ? Icons.list : Icons.grid_view),
             onPressed: () {
               ref.read(hymnViewModeProvider.notifier).set(
-                    viewMode == HymnViewMode.grid ? HymnViewMode.list : HymnViewMode.grid,
-                  );
+                viewMode == HymnViewMode.grid ? HymnViewMode.list : HymnViewMode.grid,
+              );
             },
           ),
         ],
@@ -545,54 +365,43 @@ class _TsaSioneScreenState extends ConsumerState<TsaSioneScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Container(
-              decoration: BoxDecoration(
-                color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: TextField(
-                onChanged: (value) => ref.read(hymnSearchQueryProvider.notifier).set(value),
-                decoration: InputDecoration(
-                  hintText: 'Search hymn name or number...',
-                  hintStyle: TextStyle(color: isDark ? Colors.white30 : Colors.black26),
-                  prefixIcon: Icon(Icons.search, color: isDark ? Colors.white24 : Colors.black26),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: TextField(
+              onChanged: (value) => ref.read(hymnSearchQueryProvider.notifier).set(value),
+              decoration: InputDecoration(
+                hintText: 'Search by number or title...',
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
                 ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               ),
             ),
           ),
           Expanded(
             child: viewMode == HymnViewMode.grid
                 ? GridView.builder(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(16),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 4,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                      childAspectRatio: 1,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
                     ),
                     itemCount: filteredHymns.length,
                     itemBuilder: (context, index) {
-                      final entry = filteredHymns[index];
-                      return _GridHymnItem(
-                        number: entry.key,
-                        title: entry.value,
-                        isDark: isDark,
-                      );
+                      final hymn = filteredHymns[index];
+                      return _buildHymnGridTile(context, hymn.key, hymn.value, isDark);
                     },
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: filteredHymns.length,
                     itemBuilder: (context, index) {
-                      final entry = filteredHymns[index];
-                      return _ListHymnItem(
-                        number: entry.key,
-                        title: entry.value,
-                        isDark: isDark,
-                      );
+                      final hymn = filteredHymns[index];
+                      return _buildHymnListTile(context, hymn.key, hymn.value, isDark);
                     },
                   ),
           ),
@@ -600,152 +409,88 @@ class _TsaSioneScreenState extends ConsumerState<TsaSioneScreen> {
       ),
     );
   }
-}
 
-class _GridHymnItem extends StatelessWidget {
-  final String number;
-  final String title;
-  final bool isDark;
-
-  const _GridHymnItem({
-    required this.number,
-    required this.title,
-    required this.isDark,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildHymnGridTile(BuildContext context, String number, String title, bool isDark) {
     return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HymnDetailScreen(
-              number: number,
-              title: title,
-            ),
-          ),
-        );
-      },
-      borderRadius: BorderRadius.circular(50),
+      onTap: () => _openHymnDetail(context, number, title),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
-          shape: BoxShape.circle,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isDark ? Colors.white10 : Colors.grey.shade100,
+            color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
           ),
-          boxShadow: [
-            if (!isDark)
-              BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
+          boxShadow: isDark ? [] : [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
         child: Center(
           child: Text(
             number,
             style: GoogleFonts.inter(
+              fontSize: 18,
               fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: const Color(0xFF4DB66A),
+              color: isDark ? Colors.white70 : Colors.black87,
             ),
           ),
         ),
       ),
     );
   }
-}
 
-class _ListHymnItem extends StatelessWidget {
-  final String number;
-  final String title;
-  final bool isDark;
-
-  const _ListHymnItem({
-    required this.number,
-    required this.title,
-    required this.isDark,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildHymnListTile(BuildContext context, String number, String title, bool isDark) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => HymnDetailScreen(
-                number: number,
-                title: title,
-              ),
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        onTap: () => _openHymnDetail(context, number, title),
+        leading: CircleAvatar(
+          backgroundColor: const Color(0xFFBD10E0).withOpacity(0.1),
+          child: Text(
+            number,
+            style: const TextStyle(
+              color: Color(0xFFBD10E0),
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
             ),
-          );
-        },
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark ? Colors.white10 : Colors.grey.shade100,
-            ),
-            boxShadow: [
-              if (!isDark)
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF4DB66A).withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    number,
-                    style: const TextStyle(
-                      color: Color(0xFF4DB66A),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  title,
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                color: isDark ? Colors.white24 : Colors.grey.shade300,
-              ),
-            ],
           ),
         ),
+        title: Text(
+          title,
+          style: GoogleFonts.inter(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            color: isDark ? Colors.white.withOpacity(0.9) : Colors.black87,
+          ),
+        ),
+        trailing: Icon(
+          Icons.chevron_right,
+          size: 18,
+          color: isDark ? Colors.white30 : Colors.black26,
+        ),
+      ),
+    );
+  }
+
+  void _openHymnDetail(BuildContext context, String number, String title) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HymnDetailScreen(number: number, title: title),
       ),
     );
   }
 }
 
-class HymnDetailScreen extends StatelessWidget {
+class HymnDetailScreen extends ConsumerWidget {
   final String number;
   final String title;
 
@@ -755,22 +500,71 @@ class HymnDetailScreen extends StatelessWidget {
     required this.title,
   });
 
-  Future<String> _loadLyric() async {
-    try {
-      return await rootBundle.loadString('assets/tsa-sione/$number.txt');
-    } catch (e) {
-      return 'Error loading hymn: $e';
+  Future<List<viewer.HymnPart>> _parseHymnContent(String rawContent) async {
+    final lines = rawContent.split('\n');
+    final content = <viewer.HymnPart>[];
+    
+    String currentStanza = '';
+    int? currentNumber;
+
+    // Skip the first line as it's the header
+    for (int i = 1; i < lines.length; i++) {
+      final line = lines[i].trim();
+      
+      if (line.isEmpty) {
+        if (currentStanza.isNotEmpty) {
+          content.add(viewer.HymnPart(
+            text: currentStanza.trim(),
+            type: viewer.HymnPartType.stanza,
+            number: currentNumber,
+          ));
+          currentStanza = '';
+          currentNumber = null;
+        }
+        continue;
+      }
+
+      // Check if line starts with a number (stanza number)
+      final match = RegExp(r'^(\d+)\s+(.*)').firstMatch(line);
+      if (match != null) {
+        if (currentStanza.isNotEmpty) {
+          content.add(viewer.HymnPart(
+            text: currentStanza.trim(),
+            type: viewer.HymnPartType.stanza,
+            number: currentNumber,
+          ));
+        }
+        currentNumber = int.tryParse(match.group(1)!);
+        currentStanza = match.group(2)! + '\n';
+      } else {
+        currentStanza += line + '\n';
+      }
     }
+
+    if (currentStanza.isNotEmpty) {
+      content.add(viewer.HymnPart(
+        text: currentStanza.trim(),
+        type: viewer.HymnPartType.stanza,
+        number: currentNumber,
+      ));
+    }
+
+    return content;
+  }
+
+  Future<String> _loadRawContent() async {
+    return await rootBundle.loadString('assets/tsa-sione/$number.txt');
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final hymns = TsaSioneScreen.getHymns();
 
     // Split title and author
     final titleParts = title.split(' - ');
     final mainTitle = titleParts[0];
-    final author = titleParts.length > 1 ? titleParts[1] : '';
+    final author = titleParts.length > 1 ? titleParts[1] : null;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -784,62 +578,65 @@ class HymnDetailScreen extends StatelessWidget {
         foregroundColor: theme.textTheme.bodyLarge?.color,
       ),
       body: FutureBuilder<String>(
-        future: _loadLyric(),
+        future: _loadRawContent(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Color(0xFF4DB66A)));
+            return const Center(child: CircularProgressIndicator(color: Color(0xFFBD10E0)));
           }
           if (snapshot.hasError || !snapshot.hasData) {
             return const Center(child: Text('Failed to load hymn content'));
           }
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  mainTitle,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.crimsonText(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF4DB66A),
-                  ),
-                ),
-                if (author.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    author,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 32),
-                Container(
-                  width: 60,
-                  height: 3,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4DB66A).withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 48),
-                Text(
-                  snapshot.data!,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.crimsonText(
-                    fontSize: 21,
-                    height: 1.7,
-                    color: theme.textTheme.bodyLarge?.color?.withOpacity(0.9),
-                  ),
-                ),
-                const SizedBox(height: 80),
-              ],
-            ),
+          return FutureBuilder<List<viewer.HymnPart>>(
+            future: _parseHymnContent(snapshot.data!),
+            builder: (context, contentSnapshot) {
+              if (contentSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator(color: Color(0xFFBD10E0)));
+              }
+              
+              final sortedKeys = hymns.keys.toList()..sort((a, b) {
+                final aN = int.tryParse(a.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+                final bN = int.tryParse(b.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+                return aN.compareTo(bN);
+              });
+              final currentIndex = sortedKeys.indexOf(number);
+              
+              return viewer.PremiumHymnViewer(
+                id: number,
+                title: mainTitle,
+                author: author,
+                content: contentSnapshot.data ?? [],
+                themeColor: const Color(0xFFBD10E0),
+                onNext: currentIndex < sortedKeys.length - 1 
+                    ? () {
+                        final nextKey = sortedKeys[currentIndex + 1];
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => HymnDetailScreen(
+                              number: nextKey,
+                              title: hymns[nextKey]!,
+                            ),
+                          ),
+                        );
+                      }
+                    : null,
+                onPrevious: currentIndex > 0 
+                    ? () {
+                        final prevKey = sortedKeys[currentIndex - 1];
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => HymnDetailScreen(
+                              number: prevKey,
+                              title: hymns[prevKey]!,
+                            ),
+                          ),
+                        );
+                      }
+                    : null,
+              );
+            },
           );
         },
       ),

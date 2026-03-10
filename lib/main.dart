@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:biblesos/theme/app_theme.dart';
-import 'package:biblesos/presentation/screens/home_screen.dart';
+import 'package:biblesos/presentation/screens/splash_screen.dart';
 import 'package:biblesos/presentation/providers/bible_providers.dart';
 
 import 'package:biblesos/data/storage_service.dart';
@@ -29,7 +29,7 @@ class BibleSOSApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
-      home: const MainNavigator(),
+      home: const SplashScreen(),
     );
   }
 }

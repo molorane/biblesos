@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:xml/xml.dart';
+import 'package:biblesos/presentation/widgets/premium_hymn_viewer.dart' as viewer;
 
 // Hymn Model
 class ChurchHymn {
@@ -22,8 +23,9 @@ enum HymnPartType { stanza, chorus }
 class HymnPart {
   final String text;
   final HymnPartType type;
+  final int? number;
 
-  HymnPart(this.text, this.type);
+  HymnPart(this.text, this.type, [this.number]);
 }
 
 // View modes: Grid or List
@@ -72,10 +74,12 @@ final churchHymnsProvider = FutureProvider<List<ChurchHymn>>((ref) async {
     final title = element.findElements('title').first.innerText.trim();
     final content = <HymnPart>[];
 
+    int stanzaCount = 0;
     for (var node in element.children) {
       if (node is XmlElement) {
         if (node.name.local == 'stanza') {
-          content.add(HymnPart(node.innerText.trim(), HymnPartType.stanza));
+          stanzaCount++;
+          content.add(HymnPart(node.innerText.trim(), HymnPartType.stanza, stanzaCount));
         } else if (node.name.local == 'chorus') {
           content.add(HymnPart(node.innerText.trim(), HymnPartType.chorus));
         }
@@ -248,7 +252,7 @@ class _GridHymnItem extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => HymnReaderScreen(hymn: hymn),
+            builder: (context) => HymnReaderScreen(hymnId: hymn.id),
           ),
         );
       },
@@ -299,7 +303,7 @@ class _ListHymnItem extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => HymnReaderScreen(hymn: hymn),
+              builder: (context) => HymnReaderScreen(hymnId: hymn.id),
             ),
           );
         },
@@ -362,72 +366,64 @@ class _ListHymnItem extends StatelessWidget {
   }
 }
 
-class HymnReaderScreen extends StatelessWidget {
-  final ChurchHymn hymn;
+class HymnReaderScreen extends ConsumerWidget {
+  final String hymnId;
 
-  const HymnReaderScreen({super.key, required this.hymn});
+  const HymnReaderScreen({super.key, required this.hymnId});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final hymnsAsync = ref.watch(churchHymnsProvider);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          'Hymn ${hymn.id}',
+          'Hymn $hymnId',
           style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         elevation: 0,
         backgroundColor: Colors.transparent,
         foregroundColor: theme.textTheme.bodyLarge?.color,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              hymn.title,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.crimsonText(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF4DB66A),
-              ),
-            ),
-            const SizedBox(height: 32),
-            Container(
-              width: 60,
-              height: 3,
-              decoration: BoxDecoration(
-                color: const Color(0xFF4DB66A).withOpacity(0.2),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 48),
-            ...hymn.content.map((part) {
-              final isChorus = part.type == HymnPartType.chorus;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 24),
-                child: Text(
-                  part.text,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.crimsonText(
-                    fontSize: 21,
-                    height: 1.7,
-                    fontStyle: isChorus ? FontStyle.italic : FontStyle.normal,
-                    fontWeight: isChorus ? FontWeight.w500 : FontWeight.normal,
-                    color: isChorus 
-                      ? const Color(0xFF4DB66A).withOpacity(0.9)
-                      : theme.textTheme.bodyLarge?.color?.withOpacity(0.9),
-                  ),
-                ),
-              );
-            }),
-            const SizedBox(height: 80),
-          ],
-        ),
+      body: hymnsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF4DB66A))),
+        error: (err, stack) => Center(child: Text('Error: $err')),
+        data: (hymns) {
+          final index = hymns.indexWhere((h) => h.id == hymnId);
+          if (index == -1) return const Center(child: Text('Hymn not found'));
+          
+          final hymn = hymns[index];
+          
+          return viewer.PremiumHymnViewer(
+            id: hymn.id,
+            title: hymn.title,
+            content: hymn.content.map((p) => viewer.HymnPart(
+              text: p.text,
+              type: p.type == HymnPartType.stanza 
+                  ? viewer.HymnPartType.stanza 
+                  : viewer.HymnPartType.chorus,
+              number: p.number,
+            )).toList(),
+            onNext: index < hymns.length - 1 
+                ? () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => HymnReaderScreen(hymnId: hymns[index + 1].id),
+                      ),
+                    )
+                : null,
+            onPrevious: index > 0 
+                ? () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => HymnReaderScreen(hymnId: hymns[index - 1].id),
+                      ),
+                    )
+                : null,
+          );
+        },
       ),
     );
   }
