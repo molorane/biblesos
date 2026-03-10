@@ -7,7 +7,8 @@ class SelectScriptureScreen extends ConsumerStatefulWidget {
   const SelectScriptureScreen({super.key});
 
   @override
-  ConsumerState<SelectScriptureScreen> createState() => _SelectScriptureScreenState();
+  ConsumerState<SelectScriptureScreen> createState() =>
+      _SelectScriptureScreenState();
 }
 
 class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen> {
@@ -23,7 +24,7 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen> {
     _tempBookId = ref.read(selectedBookIdProvider);
     _tempChapter = ref.read(selectedChapterProvider);
     _tempVerse = ref.read(selectedVerseProvider);
-    
+
     // Set initial book name from provider
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final books = ref.read(booksProvider).value;
@@ -38,7 +39,10 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen> {
 
   String _getAbbr(int bookId) {
     final allBooks = [..._otBooks, ..._ntBooks];
-    final match = allBooks.firstWhere((b) => b['id'] == bookId, orElse: () => {'abbr': '...'});
+    final match = allBooks.firstWhere(
+      (b) => b['id'] == bookId,
+      orElse: () => {'abbr': '...'},
+    );
     return match['abbr'];
   }
 
@@ -148,7 +152,13 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen> {
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('Select Scripture', style: TextStyle(fontWeight: FontWeight.bold, color: theme.textTheme.titleLarge?.color)),
+        title: Text(
+          'Select Scripture',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: theme.textTheme.titleLarge?.color,
+          ),
+        ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -157,9 +167,7 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen> {
         children: [
           _buildSelectorHeader(theme, isDark),
           _buildTabs(theme, isDark),
-          Expanded(
-            child: _buildContent(booksAsync, theme, isDark),
-          ),
+          Expanded(child: _buildContent(booksAsync, theme, isDark)),
         ],
       ),
     );
@@ -173,7 +181,11 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen> {
         color: isDark ? Colors.white10 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Row(
@@ -182,8 +194,13 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen> {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              _tempBookName != null && _tempChapter != null ? '$_tempBookName $_tempChapter' : 'Select...',
-              style: TextStyle(fontSize: 18, color: theme.textTheme.bodyLarge?.color),
+              _tempBookName != null && _tempChapter != null
+                  ? '$_tempBookName $_tempChapter'
+                  : 'Select...',
+              style: TextStyle(
+                fontSize: 18,
+                color: theme.textTheme.bodyLarge?.color,
+              ),
             ),
           ),
           ElevatedButton(
@@ -191,7 +208,9 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF4DB66A),
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             child: const Text('READ'),
           ),
@@ -222,9 +241,14 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          border: Border.all(color: selected ? const Color(0xFF4DB66A) : Colors.transparent, width: 2),
+          border: Border.all(
+            color: selected ? const Color(0xFF4DB66A) : Colors.transparent,
+            width: 2,
+          ),
           borderRadius: BorderRadius.circular(20),
-          color: selected ? Colors.transparent : (isDark ? Colors.white12 : Colors.white),
+          color: selected
+              ? Colors.transparent
+              : (isDark ? Colors.white12 : Colors.white),
         ),
         child: Row(
           children: [
@@ -237,7 +261,9 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen> {
             Text(
               label,
               style: TextStyle(
-                color: selected ? const Color(0xFF4DB66A) : theme.textTheme.bodyLarge?.color,
+                color: selected
+                    ? const Color(0xFF4DB66A)
+                    : theme.textTheme.bodyLarge?.color,
                 fontWeight: selected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -247,13 +273,24 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen> {
     );
   }
 
-  Widget _buildContent(AsyncValue<List<Book>> booksAsync, ThemeData theme, bool isDark) {
+  Widget _buildContent(
+    AsyncValue<List<Book>> booksAsync,
+    ThemeData theme,
+    bool isDark,
+  ) {
     switch (_selectedTabIndex) {
       case 0:
         return booksAsync.when(
           data: (books) => _buildBookGrid(books, theme, isDark),
-          loading: () => Center(child: CircularProgressIndicator(color: theme.primaryColor)),
-          error: (e, s) => Center(child: Text('Error: $e', style: TextStyle(color: theme.colorScheme.error))),
+          loading: () => Center(
+            child: CircularProgressIndicator(color: theme.primaryColor),
+          ),
+          error: (e, s) => Center(
+            child: Text(
+              'Error: $e',
+              style: TextStyle(color: theme.colorScheme.error),
+            ),
+          ),
         );
       case 1:
         return _buildChapterGrid(theme, isDark);
@@ -266,22 +303,34 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen> {
 
   Widget _buildBookGrid(List<Book> books, ThemeData theme, bool isDark) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       children: [
         _buildGridSection(_otBooks, 'Old Testament', theme, isDark),
-        const Divider(height: 40),
+        const Divider(height: 15),
         _buildGridSection(_ntBooks, 'New Testament', theme, isDark),
       ],
     );
   }
 
-  Widget _buildGridSection(List<Map<String, dynamic>> bookData, String title, ThemeData theme, bool isDark) {
+  Widget _buildGridSection(
+    List<Map<String, dynamic>> bookData,
+    String title,
+    ThemeData theme,
+    bool isDark,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.only(bottom: 12.0),
-          child: Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: theme.hintColor)),
+          child: Text(
+            title,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: theme.hintColor,
+            ),
+          ),
         ),
         GridView.builder(
           shrinkWrap: true,
@@ -312,7 +361,11 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen> {
                 alignment: Alignment.center,
                 child: Text(
                   book['abbr'],
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                 ),
               ),
             );
@@ -323,8 +376,14 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen> {
   }
 
   Widget _buildChapterGrid(ThemeData theme, bool isDark) {
-    if (_tempBookId == null) return Center(child: Text('Select a book first', style: TextStyle(color: theme.hintColor)));
-    
+    if (_tempBookId == null)
+      return Center(
+        child: Text(
+          'Select a book first',
+          style: TextStyle(color: theme.hintColor),
+        ),
+      );
+
     final chaptersAsync = ref.watch(chapterCountProvider(_tempBookId!));
 
     return chaptersAsync.when(
@@ -335,7 +394,7 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen> {
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
         ),
-        itemCount: count, 
+        itemCount: count,
         itemBuilder: (context, index) {
           final chapter = index + 1;
           bool selected = _tempChapter == chapter;
@@ -344,20 +403,28 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen> {
               setState(() {
                 _tempChapter = chapter;
                 _selectedTabIndex = 2;
-                _tempVerse = 1; 
+                _tempVerse = 1;
               });
             },
             child: Container(
               decoration: BoxDecoration(
-                color: selected ? const Color(0xFF4DB66A) : (isDark ? Colors.white12 : Colors.white),
+                color: selected
+                    ? const Color(0xFF4DB66A)
+                    : (isDark ? Colors.white12 : Colors.white),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: selected ? Colors.transparent : (isDark ? Colors.white10 : Colors.grey.shade200)),
+                border: Border.all(
+                  color: selected
+                      ? Colors.transparent
+                      : (isDark ? Colors.white10 : Colors.grey.shade200),
+                ),
               ),
               alignment: Alignment.center,
               child: Text(
                 '$chapter',
                 style: TextStyle(
-                  color: selected ? Colors.white : theme.textTheme.bodyLarge?.color,
+                  color: selected
+                      ? Colors.white
+                      : theme.textTheme.bodyLarge?.color,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -365,15 +432,29 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen> {
           );
         },
       ),
-      loading: () => Center(child: CircularProgressIndicator(color: theme.primaryColor)),
-      error: (e, s) => Center(child: Text('Error: $e', style: TextStyle(color: theme.colorScheme.error))),
+      loading: () =>
+          Center(child: CircularProgressIndicator(color: theme.primaryColor)),
+      error: (e, s) => Center(
+        child: Text(
+          'Error: $e',
+          style: TextStyle(color: theme.colorScheme.error),
+        ),
+      ),
     );
   }
 
   Widget _buildVerseGrid(ThemeData theme, bool isDark) {
-    if (_tempBookId == null || _tempChapter == null) return Center(child: Text('Select book and chapter first', style: TextStyle(color: theme.hintColor)));
+    if (_tempBookId == null || _tempChapter == null)
+      return Center(
+        child: Text(
+          'Select book and chapter first',
+          style: TextStyle(color: theme.hintColor),
+        ),
+      );
 
-    final versesAsync = ref.watch(verseCountProvider(ChaptersVersesParams(_tempBookId!, _tempChapter!)));
+    final versesAsync = ref.watch(
+      verseCountProvider(ChaptersVersesParams(_tempBookId!, _tempChapter!)),
+    );
 
     return versesAsync.when(
       data: (count) => GridView.builder(
@@ -391,15 +472,23 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen> {
             onTap: () => _onVerseSelected(verse),
             child: Container(
               decoration: BoxDecoration(
-                color: selected ? const Color(0xFF4DB66A) : (isDark ? Colors.white12 : Colors.white),
+                color: selected
+                    ? const Color(0xFF4DB66A)
+                    : (isDark ? Colors.white12 : Colors.white),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: selected ? Colors.transparent : (isDark ? Colors.white10 : Colors.grey.shade200)),
+                border: Border.all(
+                  color: selected
+                      ? Colors.transparent
+                      : (isDark ? Colors.white10 : Colors.grey.shade200),
+                ),
               ),
               alignment: Alignment.center,
               child: Text(
                 '$verse',
                 style: TextStyle(
-                  color: selected ? Colors.white : theme.textTheme.bodyLarge?.color,
+                  color: selected
+                      ? Colors.white
+                      : theme.textTheme.bodyLarge?.color,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -407,8 +496,14 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen> {
           );
         },
       ),
-      loading: () => Center(child: CircularProgressIndicator(color: theme.primaryColor)),
-      error: (e, s) => Center(child: Text('Error: $e', style: TextStyle(color: theme.colorScheme.error))),
+      loading: () =>
+          Center(child: CircularProgressIndicator(color: theme.primaryColor)),
+      error: (e, s) => Center(
+        child: Text(
+          'Error: $e',
+          style: TextStyle(color: theme.colorScheme.error),
+        ),
+      ),
     );
   }
 }
