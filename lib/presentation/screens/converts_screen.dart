@@ -296,10 +296,7 @@ class SeriesDetailScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  ...blocks.skip(1).map((block) => PremiumContentRenderer(
-                        block: block,
-                        isDark: theme.brightness == Brightness.dark,
-                      )),
+                  PremiumContentRenderer.renderBlocks(blocks.skip(1).toList(), theme.brightness == Brightness.dark),
                 ] else ...[
                   Text(
                     title,
@@ -319,10 +316,7 @@ class SeriesDetailScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  ...blocks.map((block) => PremiumContentRenderer(
-                        block: block,
-                        isDark: theme.brightness == Brightness.dark,
-                      )),
+                  PremiumContentRenderer.renderBlocks(blocks, theme.brightness == Brightness.dark),
                 ],
                 const SizedBox(height: 40),
               ],

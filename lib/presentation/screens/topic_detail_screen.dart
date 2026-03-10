@@ -103,10 +103,7 @@ class TopicDetailScreen extends ConsumerWidget {
                     
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: blocks.map((block) => PremiumContentRenderer(block: block, isDark: isDark)).toList(),
-                      ),
+                      child: PremiumContentRenderer.renderBlocks(blocks, isDark),
                     );
                   },
                   childCount: contentList.length,

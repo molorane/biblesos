@@ -12,6 +12,57 @@ class PremiumContentRenderer extends StatelessWidget {
     required this.isDark,
   });
 
+  static Widget renderBlocks(List<ContentBlock> blocks, bool isDark) {
+    List<Widget> renderedWidgets = [];
+    List<ContentBlock> currentInlineGroup = [];
+
+    void flushInlineGroup() {
+      if (currentInlineGroup.isEmpty) return;
+
+      renderedWidgets.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 0,
+            runSpacing: 4,
+            children: currentInlineGroup.map((block) {
+              if (block.type == ContentType.text) {
+                return Text(
+                  block.text,
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    height: 1.5,
+                    color: isDark ? Colors.white.withOpacity(0.9) : Colors.black87,
+                  ),
+                );
+              }
+              return PremiumContentRenderer(block: block, isDark: isDark);
+            }).toList(),
+          ),
+        ),
+      );
+      currentInlineGroup = [];
+    }
+
+    for (final block in blocks) {
+      if (block.type == ContentType.text ||
+          block.type == ContentType.boldRed ||
+          block.type == ContentType.bibleReference) {
+        currentInlineGroup.add(block);
+      } else {
+        flushInlineGroup();
+        renderedWidgets.add(PremiumContentRenderer(block: block, isDark: isDark));
+      }
+    }
+    flushInlineGroup();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: renderedWidgets,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -38,31 +89,41 @@ class PremiumContentRenderer extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: theme.primaryColor,
+              color: isDark ? theme.colorScheme.primary.withOpacity(0.9) : theme.primaryColor,
             ),
           ),
         );
       case ContentType.bibleReference:
         return Container(
-          margin: const EdgeInsets.symmetric(vertical: 8.0),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 2.0),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: theme.primaryColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: theme.primaryColor.withOpacity(0.2)),
+            color: isDark 
+                ? theme.primaryColor.withOpacity(0.15) 
+                : theme.primaryColor.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: isDark 
+                  ? theme.primaryColor.withOpacity(0.3) 
+                  : theme.primaryColor.withOpacity(0.15),
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.auto_stories, size: 14, color: theme.primaryColor),
-              const SizedBox(width: 8),
+              Icon(
+                Icons.auto_stories, 
+                size: 12, 
+                color: isDark ? theme.colorScheme.primary : theme.primaryColor,
+              ),
+              const SizedBox(width: 6),
               Flexible(
                 child: Text(
                   block.text,
                   style: GoogleFonts.inter(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: theme.primaryColor,
+                    color: isDark ? theme.colorScheme.primary : theme.primaryColor,
                   ),
                 ),
               ),
@@ -75,7 +136,7 @@ class PremiumContentRenderer extends StatelessWidget {
           margin: const EdgeInsets.symmetric(vertical: 8.0),
           padding: const EdgeInsets.all(20.0),
           decoration: BoxDecoration(
-            color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
+            color: isDark ? Colors.white.withOpacity(0.04) : Colors.white,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: isDark ? Colors.white10 : Colors.grey.shade200,
@@ -112,7 +173,9 @@ class PremiumContentRenderer extends StatelessWidget {
                   width: 6,
                   height: 6,
                   decoration: BoxDecoration(
-                    color: theme.primaryColor.withOpacity(0.5),
+                    color: isDark 
+                        ? theme.colorScheme.primary.withOpacity(0.6) 
+                        : theme.primaryColor.withOpacity(0.4),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -145,7 +208,7 @@ class PremiumContentRenderer extends StatelessWidget {
           decoration: BoxDecoration(
             border: Border(
               left: BorderSide(
-                color: isDark ? Colors.white24 : Colors.grey.shade300,
+                color: isDark ? Colors.white30 : Colors.grey.shade300,
                 width: 4,
               ),
             ),
@@ -155,7 +218,7 @@ class PremiumContentRenderer extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 16,
               fontStyle: FontStyle.italic,
-              color: isDark ? Colors.white70 : Colors.grey.shade700,
+              color: isDark ? Colors.white.withOpacity(0.7) : Colors.grey.shade700,
               height: 1.4,
             ),
           ),
@@ -166,7 +229,7 @@ class PremiumContentRenderer extends StatelessWidget {
           style: GoogleFonts.inter(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: isDark ? Colors.red.shade400 : Colors.red.shade700,
+            color: isDark ? Colors.red.shade300 : Colors.red.shade700,
             height: 1.5,
           ),
         );
