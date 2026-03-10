@@ -88,6 +88,8 @@ flutter:
     - assets/converts/or/
     - assets/tsa-sione/
     - assets/hymns/
+    - assets/doctrines/en/compact/
+    - assets/doctrines/en/full/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
