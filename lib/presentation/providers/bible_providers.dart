@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:biblesos/data/repositories/bible_repository_impl.dart';
+import 'package:biblesos/data/repositories/topic_repository.dart';
 import 'package:biblesos/domain/entities/bible_models.dart';
 import 'package:biblesos/data/storage_service.dart';
 
@@ -234,3 +235,18 @@ class WordsOfChristInRedNotifier extends Notifier<bool> {
 final wordsOfChristInRedProvider = NotifierProvider<WordsOfChristInRedNotifier, bool>(
   WordsOfChristInRedNotifier.new,
 );
+
+// Topic Providers
+final topicRepositoryProvider = Provider<TopicRepository>((ref) {
+  return TopicRepositoryImpl();
+});
+
+final allTopicsProvider = FutureProvider<List<Topic>>((ref) async {
+  final repository = ref.watch(topicRepositoryProvider);
+  return await repository.getTopics();
+});
+
+final topicContentProvider = FutureProvider.family<List<TopicContent>, int>((ref, topicId) async {
+  final repository = ref.watch(topicRepositoryProvider);
+  return await repository.getTopicContent(topicId);
+});

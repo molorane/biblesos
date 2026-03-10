@@ -92,3 +92,33 @@ class TextHighlight {
     );
   }
 }
+
+class Topic {
+  final int id;
+  final String text;
+
+  Topic({required this.id, required this.text});
+
+  factory Topic.fromMap(Map<String, dynamic> map) {
+    return Topic(
+      id: map['id'],
+      text: map['text'],
+    );
+  }
+}
+
+class TopicContent {
+  final int id;
+  final int topicId;
+  final String text;
+
+  TopicContent({required this.id, required this.topicId, required this.text});
+
+  factory TopicContent.fromMap(Map<String, dynamic> map) {
+    return TopicContent(
+      id: map['id'],
+      topicId: map['kword_id'],
+      text: map['text'],
+    );
+  }
+}
