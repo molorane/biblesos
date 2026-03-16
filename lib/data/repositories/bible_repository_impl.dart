@@ -16,6 +16,7 @@ abstract class BibleRepository {
   Future<List<Map<String, dynamic>>> getHistory();
   Future<int> getChapterCount(int bookId);
   Future<int> getVerseCount(int bookId, int chapter);
+  Future<Verse?> getVerseByIds(int bookId, int chapter, int verse);
   Future<Map<int, String>> getChapterNotes(int bookId, int chapter);
   Future<void> saveTextHighlight(int verseId, int start, int end, String color);
   Future<void> deleteTextHighlight(int verseId, int start, int end);
@@ -68,6 +69,11 @@ class BibleRepositoryImpl implements BibleRepository {
   @override
   Future<int> getVerseCount(int bookId, int chapter) async {
     return await _dbService.getVerseCount(bookId, chapter);
+  }
+
+  @override
+  Future<Verse?> getVerseByIds(int bookId, int chapter, int verse) async {
+    return await _dbService.getVerseByIds(bookId, chapter, verse);
   }
 
   @override

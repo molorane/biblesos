@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:biblesos/core/utils/content_parser.dart';
 import 'package:biblesos/presentation/widgets/premium_content_renderer.dart';
+import 'package:biblesos/core/utils/series_utils.dart';
 
 // Provider for selected language ('en' or 'or')
 class ConvertsLanguageNotifier extends Notifier<String> {
@@ -20,39 +21,13 @@ final convertsLanguageProvider = NotifierProvider<ConvertsLanguageNotifier, Stri
 class ConvertsScreen extends ConsumerWidget {
   const ConvertsScreen({super.key});
 
-  Map<int, String> _getSeriesData(String language) {
-    if (language == 'or') {
-      return {
-        0: "TATAISO EA SEHAPI SA MOEA",
-        1: "KHOLISEHO EA PHOLOHO",
-        2: "THAPELO",
-        3: "BIBELE LE OENA",
-        4: "MOLEKO",
-        5: "TLHORISO",
-        6: "HO TIISETSA TUMELONG",
-        7: "LELAPA LA NNETE",
-        8: "BOLELLA METSOALLE EA HAO",
-      };
-    }
-    return {
-      0: "Guides to convert series",
-      1: "Assurance of salvation",
-      2: "Prayer",
-      3: "Bible and you",
-      4: "Temptation",
-      5: "Persecution",
-      6: "Steadfastness",
-      7: "True Family",
-      8: "Tell your friends",
-    };
-  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final language = ref.watch(convertsLanguageProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final seriesData = _getSeriesData(language);
+    final seriesData = SeriesUtils.getSeriesData(language);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,

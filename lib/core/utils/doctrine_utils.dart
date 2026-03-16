@@ -1,0 +1,26 @@
+class DoctrineUtils {
+  static const List<String> doctrineTitles = [
+    "The Holy Bible",
+    "The Godhead",
+    "The Virgin Birth of Jesus",
+    "Total Depravity, Sinfulness and Guilt of All Men",
+    "Repentance",
+    "Restitution",
+    "Justification",
+    "Water Baptism",
+    "The Lord’s Supper",
+    "Entire Sanctification",
+    "Holy Ghost Baptism",
+    "Redemption, Healing and Health",
+    "Personal Evangelism",
+    "Marriage",
+    "The Rapture",
+    "The Resurrection of The Dead",
+    "The Great Tribulation",
+    "The Second Coming of Christ",
+    "Christ’s Millennial Reign",
+    "The Great White Throne Judgement",
+    "The New Heaven and The New Earth",
+    "Hell",
+  ];
+}

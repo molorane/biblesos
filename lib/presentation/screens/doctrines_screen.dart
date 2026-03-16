@@ -3,34 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:biblesos/core/utils/content_parser.dart';
 import 'package:biblesos/presentation/widgets/premium_content_renderer.dart';
+import 'package:biblesos/core/utils/doctrine_utils.dart';
 
 class DoctrinesScreen extends StatelessWidget {
   const DoctrinesScreen({super.key});
 
-  static const List<String> doctrineTitles = [
-    "The Holy Bible",
-    "The Godhead",
-    "The Virgin Birth of Jesus",
-    "Total Depravity, Sinfulness and Guilt of All Men",
-    "Repentance",
-    "Restitution",
-    "Justification",
-    "Water Baptism",
-    "The Lord’s Supper",
-    "Entire Sanctification",
-    "Holy Ghost Baptism",
-    "Redemption, Healing and Health",
-    "Personal Evangelism",
-    "Marriage",
-    "The Rapture",
-    "The Resurrection of The Dead",
-    "The Great Tribulation",
-    "The Second Coming of Christ",
-    "Christ’s Millennial Reign",
-    "The Great White Throne Judgement",
-    "The New Heaven and The New Earth",
-    "Hell",
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -50,13 +27,13 @@ class DoctrinesScreen extends StatelessWidget {
       ),
       body: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        itemCount: doctrineTitles.length + 1, // +1 for Introduction
+        itemCount: DoctrineUtils.doctrineTitles.length + 1, // +1 for Introduction
         itemBuilder: (context, index) {
           if (index == 0) {
             return _buildIntroCard(context, isDark);
           }
           final doctrineIndex = index;
-          final title = doctrineTitles[index - 1];
+          final title = DoctrineUtils.doctrineTitles[index - 1];
           return _DoctrineTile(
             index: doctrineIndex,
             title: title,

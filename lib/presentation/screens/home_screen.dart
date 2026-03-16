@@ -133,169 +133,181 @@ class VerseOfTheDayCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final verseAsync = ref.watch(verseOfTheDayProvider);
 
-    return InkWell(
-      onTap: () {
-        // John 3:16 (Book 43, Chapter 3, Verse 16)
-        ref.read(selectedBookIdProvider.notifier).set(43);
-        ref.read(selectedChapterProvider.notifier).set(3);
-        ref.read(selectedVerseProvider.notifier).set(16);
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const ReaderScreen()),
-        );
-      },
-      borderRadius: BorderRadius.circular(24),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        height: 280,
-        decoration: BoxDecoration(
+    return verseAsync.when(
+      data: (verse) {
+        if (verse == null) return const SizedBox.shrink();
+        
+        final verseText = verse.displayScripture;
+        final reference = '${verse.book} ${verse.chapter}:${verse.verse}';
+
+        return InkWell(
+          onTap: () {
+            ref.read(selectedBookIdProvider.notifier).set(verse.bookNum);
+            ref.read(selectedChapterProvider.notifier).set(verse.chapter);
+            ref.read(selectedVerseProvider.notifier).set(verse.verse);
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ReaderScreen()),
+            );
+          },
           borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            height: 280,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+              image: DecorationImage(
+                image: AssetImage('assets/images/${_getSelectedImage()}'),
+                fit: BoxFit.cover,
+              ),
             ),
-          ],
-          image: DecorationImage(
-            image: AssetImage('assets/images/${_getSelectedImage()}'),
-            fit: BoxFit.cover,
-          ),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Stack(
-            children: [
-              // Dark Gradient Overlay for readability
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: const [0.0, 0.4, 1.0],
-                    colors: [
-                      Colors.black.withOpacity(0.1),
-                      Colors.black.withOpacity(0.3),
-                      Colors.black.withOpacity(0.7),
-                    ],
-                  ),
-                ),
-              ),
-              // Bottom Glass effect
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: 72,
-                child: ClipRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(color: Colors.white.withOpacity(0.1)),
-                  ),
-                ),
-              ),
-              // Content
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Stack(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.only(
-                      top: 24,
-                      left: 24,
-                      right: 24,
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        'VERSE OF THE DAY',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.5,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Center(
-                        child: Text(
-                          '"Etsoe Morena o ile a rata fatshe hakaalo, a ba a le neela Mora oa hae ea tsoetsoeng a '
-                          'le mong, hore e mong le e mong ea lumelang ho eena a se ke a timela, '
-                          'a mpe a be le bophelo bo sa feleng."',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.crimsonText(
-                            color: Colors.white,
-                            fontSize: 21,
-                            fontStyle: FontStyle.italic,
-                            height: 1.3,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+                  // Dark Gradient Overlay for readability
                   Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: const [0.0, 0.4, 1.0],
+                        colors: [
+                          Colors.black.withOpacity(0.1),
+                          Colors.black.withOpacity(0.3),
+                          Colors.black.withOpacity(0.7),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Bottom Glass effect
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
                     height: 72,
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Johanne 3:16',
-                          style: GoogleFonts.inter(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
+                    child: ClipRect(
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: Container(color: Colors.white.withOpacity(0.1)),
+                      ),
+                    ),
+                  ),
+                  // Content
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(
+                          top: 24,
+                          left: 24,
+                          right: 24,
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text(
+                            'VERSE OF THE DAY',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.5,
+                            ),
                           ),
                         ),
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: Icon(
-                                Icons.share_outlined,
-                                color: Colors.white.withOpacity(0.9),
-                                size: 22,
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24),
+                          child: Center(
+                            child: Text(
+                              '"$verseText"',
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.crimsonText(
+                                color: Colors.white,
+                                fontSize: 21,
+                                fontStyle: FontStyle.italic,
+                                height: 1.3,
                               ),
-                              constraints: const BoxConstraints(),
-                              padding: EdgeInsets.zero,
-                              onPressed: () {
-                                const verseText =
-                                    'Etsoe Morena o ile a rata fatshe hakaalo, a ba a le neela Mora oa hae ea tsoetsoeng a '
-                                    'le mong, hore e mong le e mong ea lumelang ho eena a se ke a timela, '
-                                    'a mpe a be le bophelo bo sa feleng.';
-                                const reference = 'Johanne 3:16';
-                                Share.share(
-                                  '"$verseText"\n\n$reference\nShared from Bible SOS',
-                                );
-                              },
                             ),
-                            const SizedBox(width: 20),
-                            Icon(
-                              Icons.bookmark_border,
-                              color: Colors.white.withOpacity(0.9),
-                              size: 22,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        height: 72,
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              reference,
+                              style: GoogleFonts.inter(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.share_outlined,
+                                    color: Colors.white.withOpacity(0.9),
+                                    size: 22,
+                                  ),
+                                  constraints: const BoxConstraints(),
+                                  padding: EdgeInsets.zero,
+                                  onPressed: () {
+                                    Share.share(
+                                      '"$verseText"\n\n$reference\nShared from Bible SOS',
+                                    );
+                                  },
+                                ),
+                                const SizedBox(width: 20),
+                                Icon(
+                                  Icons.bookmark_border,
+                                  color: Colors.white.withOpacity(0.9),
+                                  size: 22,
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
+        );
+      },
+      loading: () => Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        height: 280,
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(24),
         ),
+        child: const Center(child: CircularProgressIndicator()),
       ),
+      error: (e, s) => const SizedBox.shrink(),
     );
   }
 }

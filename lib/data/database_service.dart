@@ -207,6 +207,19 @@ class DatabaseService {
     return maps.map((m) => Verse.fromMap(m)).toList();
   }
 
+  Future<Verse?> getVerseByIds(int bookId, int chapter, int verse) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT b.rowid as id, b.*, bk.book as book_name 
+      FROM bible b
+      JOIN book bk ON b.book = bk.id
+      WHERE b.book = ? AND b.chapter = ? AND b.verse = ?
+    ''', [bookId, chapter, verse]);
+    
+    if (maps.isEmpty) return null;
+    return Verse.fromMap(maps.first);
+  }
+
   Future<List<Verse>> searchScriptures(String query) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.rawQuery('''

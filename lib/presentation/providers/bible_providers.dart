@@ -136,6 +136,12 @@ final bookmarksProvider = FutureProvider<List<Verse>>((ref) async {
   return await repository.getBookmarks();
 });
 
+final verseOfTheDayProvider = FutureProvider<Verse?>((ref) async {
+  final repository = ref.watch(bibleRepositoryProvider);
+  // Default to John 3:3
+  return await repository.getVerseByIds(43, 3, 3);
+});
+
 final bookmarkIdsProvider = FutureProvider<Set<int>>((ref) async {
   final bookmarks = await ref.watch(bookmarksProvider.future);
   return bookmarks.map((v) => v.id).toSet();

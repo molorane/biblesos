@@ -19,6 +19,7 @@ class ReaderScreen extends ConsumerStatefulWidget {
 class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   late PageController _pageController;
   final Color _primaryGreen = const Color(0xFF4DB66A);
+  bool _isProgrammaticJump = false;
 
   @override
   void initState() {
@@ -108,7 +109,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                   );
                   final newChapter = ref.read(selectedChapterProvider);
                   if (_pageController.hasClients) {
+                    setState(() => _isProgrammaticJump = true);
                     _pageController.jumpToPage(newChapter - 1);
+                    // Reset flag after a short delay since jumpToPage/animateToPage 
+                    // triggers onPageChanged asynchronously or immediately
+                    Future.delayed(const Duration(milliseconds: 100), () {
+                      if (mounted) setState(() => _isProgrammaticJump = false);
+                    });
                   }
                 },
                 child: Container(
@@ -224,9 +231,16 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
             itemCount: count,
             onPageChanged: (index) {
               final newChapter = index + 1;
-              if (newChapter != ref.read(selectedChapterProvider)) {
+              final currentChapter = ref.read(selectedChapterProvider);
+              
+              if (newChapter != currentChapter) {
                 ref.read(selectedChapterProvider.notifier).set(newChapter);
-                ref.read(selectedVerseProvider.notifier).set(1); // Reset verse on chapter change
+                
+                // Only reset verse if it was a manual swipe (not a programmatic jump)
+                if (!_isProgrammaticJump) {
+                  ref.read(selectedVerseProvider.notifier).set(1);
+                }
+                
                 if (bookId != null) {
                   DatabaseService().addToHistory(bookId, bookName, newChapter);
                 }
@@ -270,9 +284,7 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToVerseIfSelected(ref.read(selectedVerseProvider));
-    });
+    // We'll handle initial scroll in build() when data arrives
   }
 
   @override
@@ -282,10 +294,11 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
   }
 
   void _scrollToVerseIfSelected(int verse) {
-    if (!mounted || verse <= 1) return;
+    if (!mounted || verse < 1) return;
     
-    // Give it a short delay to ensure the ListView is rendered
-    Future.delayed(const Duration(milliseconds: 300), () {
+    // Give it a longer delay to ensure the ListView has had time to layout
+    // and keys are attached for all (visible) items.
+    Future.delayed(const Duration(milliseconds: 500), () {
       if (!mounted) return;
       final key = _verseKeys[verse];
       if (key != null && key.currentContext != null) {
@@ -293,7 +306,12 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
           key.currentContext!,
           duration: const Duration(milliseconds: 600),
           curve: Curves.easeInOut,
+          alignment: 0.1, // Scroll to top of the screen with a small margin
         );
+      } else {
+        // If key is not available yet, it might be because ListView hasn't built it.
+        // We can try one more time or consider a different approach if this fails.
+        debugPrint('Verse $verse key or context not found for scrolling');
       }
     });
   }
@@ -602,9 +620,9 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
     final fontFamily = ref.watch(readerFontFamilyProvider);
     final wordsOfChristInRed = ref.watch(wordsOfChristInRedProvider);
 
-    // Listen to verse changes to trigger scrolling
+    // Listen to verse changes to trigger scrolling if we're on the current chapter
     ref.listen<int>(selectedVerseProvider, (previous, next) {
-      if (next > 1) {
+      if (next > 0) {
         _scrollToVerseIfSelected(next);
       }
     });
@@ -618,12 +636,18 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
           _verseKeys[verse.verse] ??= GlobalKey();
         }
 
+        // Trigger scroll once data is available
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToVerseIfSelected(selectedVerse);
+        });
+
         final notes = notesAsync.maybeWhen(data: (d) => d, orElse: () => <int, String>{});
         final bookmarkIds = bookmarkIdsAsync.maybeWhen(data: (d) => d, orElse: () => <int>{});
         final textHighlights = textHighlightsAsync.maybeWhen(data: (d) => d, orElse: () => <int, List<TextHighlight>>{});
 
         return ListView.builder(
           controller: _scrollController,
+          cacheExtent: 5000, // Ensure all verses are built for scrolling
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           itemCount: verses.length,
           itemBuilder: (context, index) {
