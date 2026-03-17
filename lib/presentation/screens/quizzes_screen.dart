@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:biblesos/domain/entities/quiz_models.dart';
 import 'package:biblesos/presentation/providers/quiz_providers.dart';
 import 'package:biblesos/presentation/screens/quiz_play_screen.dart';
@@ -157,9 +158,18 @@ class _ResultCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          Text(
-            '${result.score}/${result.totalQuestions} correct',
-            style: theme.textTheme.bodySmall?.copyWith(fontSize: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${result.score}/${result.totalQuestions} correct',
+                style: theme.textTheme.bodySmall?.copyWith(fontSize: 10),
+              ),
+              Text(
+                DateFormat('MMM d, HH:mm').format(result.completedAt),
+                style: theme.textTheme.bodySmall?.copyWith(fontSize: 9, color: Colors.grey),
+              ),
+            ],
           ),
         ],
       ),
