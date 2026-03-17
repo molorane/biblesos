@@ -67,7 +67,7 @@ class TranslationsScreen extends ConsumerWidget {
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 4.0),
                   child: Text(
-                    isSesotho ? 'Local • Default' : 'Public Domain • Free',
+                    isSesotho ? 'Lesotho • Default' : 'Public Domain • Free',
                     style: TextStyle(
                       color: isDark ? Colors.white60 : Colors.black54,
                       fontSize: 13,
