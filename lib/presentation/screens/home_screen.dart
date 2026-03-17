@@ -13,6 +13,7 @@ import 'package:biblesos/presentation/screens/tsa_sione_screen.dart';
 import 'package:biblesos/presentation/screens/church_hymns_screen.dart';
 import 'package:biblesos/presentation/screens/topics_screen.dart';
 import 'package:biblesos/presentation/screens/doctrines_screen.dart';
+import 'package:biblesos/presentation/screens/quizzes_screen.dart';
 import 'package:share_plus/share_plus.dart';
 
 class MainNavigator extends ConsumerStatefulWidget {
@@ -373,6 +374,17 @@ class QuickAccessMenu extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const TsaSioneScreen()),
+          );
+        },
+      ),
+      _MenuItem(
+        label: 'Quizzes',
+        icon: Icons.quiz_outlined,
+        color: const Color(0xFFFF7043),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const QuizzesScreen()),
           );
         },
       ),

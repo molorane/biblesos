@@ -4,17 +4,20 @@ class StorageService {
   static const String settingsBoxName = 'settings';
   static const String bookmarksBoxName = 'bookmarks';
   static const String historyBoxName = 'history';
+  static const String quizzesBoxName = 'quizzes';
 
   static Future<void> init() async {
     await Hive.initFlutter();
     await Hive.openBox(settingsBoxName);
     await Hive.openBox(bookmarksBoxName);
     await Hive.openBox(historyBoxName);
+    await Hive.openBox(quizzesBoxName);
   }
 
   static Box get settingsBox => Hive.box(settingsBoxName);
   static Box get bookmarksBox => Hive.box(bookmarksBoxName);
   static Box get historyBox => Hive.box(historyBoxName);
+  static Box get quizzesBox => Hive.box(quizzesBoxName);
 
   // Settings helpers
   static int? getInt(String key) => settingsBox.get(key);

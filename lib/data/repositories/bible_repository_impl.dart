@@ -1,4 +1,5 @@
 import 'package:biblesos/domain/entities/bible_models.dart';
+import 'package:biblesos/domain/entities/quiz_models.dart';
 import 'package:biblesos/data/database_service.dart';
 import 'package:biblesos/data/api_service.dart';
 import 'package:sqflite/sqflite.dart';
@@ -23,6 +24,11 @@ abstract class BibleRepository {
   Future<void> deleteTextHighlight(int verseId, int start, int end);
   Future<Map<int, List<TextHighlight>>> getTextHighlights(int bookId, int chapter);
   Future<List<Translation>> getTranslations();
+  
+  // Quiz
+  Future<List<Level>> getLevels();
+  Future<List<Quiz>> getQuizzesByLevel(int levelId);
+  Future<List<Question>> getQuestionsByQuiz(int quizId);
 }
 
 class BibleRepositoryImpl implements BibleRepository {
@@ -153,5 +159,20 @@ class BibleRepositoryImpl implements BibleRepository {
   @override
   Future<List<Translation>> getTranslations() async {
     return await _apiService.fetchTranslations();
+  }
+
+  @override
+  Future<List<Level>> getLevels() async {
+    return await _apiService.fetchLevels();
+  }
+
+  @override
+  Future<List<Quiz>> getQuizzesByLevel(int levelId) async {
+    return await _apiService.fetchQuizzesByLevel(levelId);
+  }
+
+  @override
+  Future<List<Question>> getQuestionsByQuiz(int quizId) async {
+    return await _apiService.fetchQuestionsByQuiz(quizId);
   }
 }
