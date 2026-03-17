@@ -15,19 +15,18 @@ class AppTheme {
       elevation: 0,
       backgroundColor: Colors.transparent,
     ),
+    iconTheme: const IconThemeData(color: Colors.black87),
   );
 
   static ThemeData darkTheme = ThemeData(
     useMaterial3: true,
     colorSchemeSeed: primaryColor,
     brightness: Brightness.dark,
-    textTheme: GoogleFonts.interTextTheme(
-      ThemeData(brightness: Brightness.dark).textTheme,
-    ),
     appBarTheme: const AppBarTheme(
       centerTitle: true,
       elevation: 0,
       backgroundColor: Colors.transparent,
     ),
+    iconTheme: const IconThemeData(color: Colors.white),
   );
 }

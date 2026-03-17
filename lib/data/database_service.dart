@@ -355,4 +355,14 @@ class DatabaseService {
     _currentTranslationAbv = abv;
     // Database will be re-initialized on next access
   }
+
+  Future<void> deleteTranslation(String abv) async {
+    if (abv == 'Sesotho' || abv == 'SOS') return; // Cannot delete default
+    
+    final path = await getTranslationPath(abv);
+    final file = File(path);
+    if (await file.exists()) {
+      await file.delete();
+    }
+  }
 }

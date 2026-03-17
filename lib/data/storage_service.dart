@@ -19,6 +19,9 @@ class StorageService {
   static Box get historyBox => Hive.box(historyBoxName);
   static Box get quizzesBox => Hive.box(quizzesBoxName);
 
+  static const String keyTranslationsCache = 'translations_cache';
+  static const String keyDownloadedMetadataCache = 'downloaded_metadata_cache';
+
   // Settings helpers
   static int? getInt(String key) => settingsBox.get(key);
   static Future<void> setInt(String key, int value) => settingsBox.put(key, value);
@@ -31,6 +34,9 @@ class StorageService {
 
   static bool getBool(String key, {bool defaultValue = false}) => settingsBox.get(key) ?? defaultValue;
   static Future<void> setBool(String key, bool value) => settingsBox.put(key, value);
+
+  static List<dynamic>? getList(String key) => settingsBox.get(key);
+  static Future<void> setList(String key, List<dynamic> value) => settingsBox.put(key, value);
 
   // Last Read helpers
   static const String keyLastBookId = 'last_book_id';

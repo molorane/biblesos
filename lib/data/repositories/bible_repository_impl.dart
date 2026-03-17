@@ -2,6 +2,7 @@ import 'package:biblesos/domain/entities/bible_models.dart';
 import 'package:biblesos/domain/entities/quiz_models.dart';
 import 'package:biblesos/data/database_service.dart';
 import 'package:biblesos/data/api_service.dart';
+import 'package:biblesos/data/storage_service.dart';
 import 'package:sqflite/sqflite.dart';
 
 abstract class BibleRepository {
@@ -27,6 +28,7 @@ abstract class BibleRepository {
   Future<void> downloadTranslation(String abv, {void Function(double progress)? onProgress});
   Future<bool> isTranslationDownloaded(String abv);
   Future<void> setActiveTranslation(String abv);
+  Future<void> deleteTranslation(String abv);
   
   // Quiz
   Future<List<Level>> getLevels();
@@ -161,7 +163,39 @@ class BibleRepositoryImpl implements BibleRepository {
 
   @override
   Future<List<Translation>> getTranslations() async {
-    return await _apiService.fetchTranslations();
+    try {
+      final translations = await _apiService.fetchTranslations();
+      // Cache the translations
+      await StorageService.setList(
+        StorageService.keyTranslationsCache,
+        translations.map((t) => {'abv': t.abv, 'name': t.name, 'version': t.version}).toList(),
+      );
+      return translations;
+    } catch (e) {
+      // Fallback to cached translations
+      final cached = StorageService.getList(StorageService.keyTranslationsCache);
+      final List<Translation> result = [];
+      
+      if (cached != null) {
+        result.addAll(cached.map((json) => Translation.fromJson(Map<String, dynamic>.from(json))));
+      } else {
+        // If no cache, at least return Sesotho as it's always available
+        result.add(Translation(abv: 'SESOTHO', name: 'Sesotho Bible', version: '0.0.0'));
+      }
+      
+      // Merge in any persistent downloaded metadata if not already present
+      final downloadedMetadata = StorageService.getList(StorageService.keyDownloadedMetadataCache);
+      if (downloadedMetadata != null) {
+        for (var json in downloadedMetadata) {
+          final t = Translation.fromJson(Map<String, dynamic>.from(json));
+          if (!result.any((item) => item.abv == t.abv)) {
+            result.add(t);
+          }
+        }
+      }
+      
+      return result;
+    }
   }
 
   @override
@@ -183,6 +217,33 @@ class BibleRepositoryImpl implements BibleRepository {
   Future<void> downloadTranslation(String abv, {void Function(double progress)? onProgress}) async {
     final bytes = await _apiService.downloadTranslation(abv, onProgress: onProgress);
     await _dbService.saveDownloadedTranslation(abv, bytes);
+    
+    // Explicitly add to persistent download metadata cache
+    final translations = await getTranslations();
+    final translation = translations.firstWhere((t) => t.abv == abv, orElse: () => Translation(abv: abv, name: abv, version: '0.0.0'));
+    
+    final currentPersistent = StorageService.getList(StorageService.keyDownloadedMetadataCache) ?? [];
+    final List<Map<String, dynamic>> updatedPersistent = List<Map<String, dynamic>>.from(currentPersistent.map((e) => Map<String, dynamic>.from(e)));
+    
+    if (!updatedPersistent.any((t) => t['abv'] == abv)) {
+      updatedPersistent.add({'abv': translation.abv, 'name': translation.name, 'version': translation.version});
+      await StorageService.setList(StorageService.keyDownloadedMetadataCache, updatedPersistent);
+    }
+  }
+
+  @override
+  Future<void> deleteTranslation(String abv) async {
+    if (abv == 'Sesotho' || abv == 'SOS') return; // Cannot delete default
+    
+    // Delete database file
+    await _dbService.deleteTranslation(abv);
+    
+    // Remove from persistent metadata cache
+    final currentPersistent = StorageService.getList(StorageService.keyDownloadedMetadataCache) ?? [];
+    final List<Map<String, dynamic>> updatedPersistent = List<Map<String, dynamic>>.from(currentPersistent.map((e) => Map<String, dynamic>.from(e)));
+    
+    updatedPersistent.removeWhere((t) => t['abv'] == abv);
+    await StorageService.setList(StorageService.keyDownloadedMetadataCache, updatedPersistent);
   }
 
   @override

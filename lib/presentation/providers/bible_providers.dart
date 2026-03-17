@@ -323,5 +323,10 @@ final downloadedTranslationsProvider = FutureProvider<Set<String>>((ref) async {
       downloaded.add(t.abv);
     }
   }
+  
+  // Always include Sesotho
+  downloaded.add('SOS');
+  downloaded.add('SESOTHO');
+  
   return downloaded;
 });

@@ -58,6 +58,61 @@ class _TranslationsScreenState extends ConsumerState<TranslationsScreen> {
     }
   }
 
+  Future<void> _handleDelete(Translation translation) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove Translation'),
+        content: Text('Are you sure you want to remove ${translation.name}? You will need to download it again to access it offline.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        final repository = ref.read(bibleRepositoryProvider);
+        final selectedTranslation = ref.read(selectedTranslationProvider);
+        
+        // If deleting the current translation, switch to Sesotho first
+        if (selectedTranslation.abv == translation.abv) {
+          final translations = await repository.getTranslations();
+          final sesotho = translations.firstWhere(
+            (t) => t.abv.toUpperCase() == 'SOS' || t.abv.toUpperCase() == 'SESOTHO',
+            orElse: () => Translation(abv: 'SESOTHO', name: 'Sesotho Bible', version: '0.0.0'),
+          );
+          await ref.read(selectedTranslationProvider.notifier).set(sesotho);
+        }
+
+        await repository.deleteTranslation(translation.abv);
+        
+        // Refresh downloaded status
+        ref.invalidate(downloadedTranslationsProvider);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${translation.name} removed successfully.')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to remove ${translation.name}: $e'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final translationsAsync = ref.watch(translationsProvider);
@@ -211,7 +266,7 @@ class _TranslationsScreenState extends ConsumerState<TranslationsScreen> {
             ),
           ),
           trailing: isSelected 
-              ? Icon(Icons.check_circle, color: theme.primaryColor)
+              ? Icon(Icons.check_circle, color: theme.colorScheme.primary)
               : isDownloading
                   ? Stack(
                       alignment: Alignment.center,
@@ -232,10 +287,14 @@ class _TranslationsScreenState extends ConsumerState<TranslationsScreen> {
                       ],
                     )
                   : isDownloaded
-                      ? null
+                      ? isSesotho ? null : IconButton(
+                          icon: const Icon(Icons.delete_outline),
+                          color: Colors.red.withOpacity(0.7),
+                          onPressed: () => _handleDelete(translation),
+                        )
                       : IconButton(
                           icon: const Icon(Icons.download_for_offline_outlined),
-                          color: theme.primaryColor.withOpacity(0.7),
+                          color: theme.colorScheme.primary.withOpacity(0.8),
                           onPressed: () => _handleDownload(translation),
                         ),
           onTap: (isDownloaded && !isSelected && !isDownloading) ? () async {
