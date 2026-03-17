@@ -274,3 +274,31 @@ final searchTopicsProvider = FutureProvider<List<Topic>>((ref) async {
   final repository = ref.watch(topicRepositoryProvider);
   return await repository.searchTopics(query);
 });
+
+// Translation Providers
+final translationsProvider = FutureProvider<List<Translation>>((ref) async {
+  final repository = ref.watch(bibleRepositoryProvider);
+  return await repository.getTranslations();
+});
+
+class SelectedTranslationNotifier extends Notifier<Translation> {
+  static const _keyAbv = 'selected_translation_abv';
+  static const _keyName = 'selected_translation_name';
+
+  @override
+  Translation build() {
+    final abv = StorageService.getString(_keyAbv) ?? 'SESOTHO';
+    final name = StorageService.getString(_keyName) ?? 'Sesotho Bible';
+    return Translation(abv: abv, name: name, version: '0.0.0');
+  }
+
+  void set(Translation translation) async {
+    state = translation;
+    await StorageService.setString(_keyAbv, translation.abv);
+    await StorageService.setString(_keyName, translation.name);
+  }
+}
+
+final selectedTranslationProvider = NotifierProvider<SelectedTranslationNotifier, Translation>(
+  SelectedTranslationNotifier.new,
+);

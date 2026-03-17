@@ -1,5 +1,6 @@
 import 'package:biblesos/domain/entities/bible_models.dart';
 import 'package:biblesos/data/database_service.dart';
+import 'package:biblesos/data/api_service.dart';
 import 'package:sqflite/sqflite.dart';
 
 abstract class BibleRepository {
@@ -21,10 +22,12 @@ abstract class BibleRepository {
   Future<void> saveTextHighlight(int verseId, int start, int end, String color);
   Future<void> deleteTextHighlight(int verseId, int start, int end);
   Future<Map<int, List<TextHighlight>>> getTextHighlights(int bookId, int chapter);
+  Future<List<Translation>> getTranslations();
 }
 
 class BibleRepositoryImpl implements BibleRepository {
   final DatabaseService _dbService = DatabaseService();
+  final ApiService _apiService = ApiService();
 
   @override
   Future<void> addToHistory(int bookId, String bookName, int chapter) async {
@@ -145,5 +148,10 @@ class BibleRepositoryImpl implements BibleRepository {
   @override
   Future<Map<int, List<TextHighlight>>> getTextHighlights(int bookId, int chapter) async {
     return await _dbService.getTextHighlights(bookId, chapter);
+  }
+
+  @override
+  Future<List<Translation>> getTranslations() async {
+    return await _apiService.fetchTranslations();
   }
 }

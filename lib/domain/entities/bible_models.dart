@@ -122,3 +122,23 @@ class TopicContent {
     );
   }
 }
+
+class Translation {
+  final String abv;
+  final String name;
+  final String version;
+
+  Translation({
+    required this.abv,
+    required this.name,
+    required this.version,
+  });
+
+  factory Translation.fromJson(Map<String, dynamic> json) {
+    return Translation(
+      abv: json['abv'] ?? '',
+      name: json['name'] ?? '',
+      version: json['version'] ?? '',
+    );
+  }
+}

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:biblesos/domain/entities/bible_models.dart';
 import 'package:biblesos/presentation/providers/bible_providers.dart';
 import 'package:biblesos/presentation/screens/select_scripture_screen.dart';
+import 'package:biblesos/presentation/screens/translations_screen.dart';
 import 'package:biblesos/data/storage_service.dart';
 import 'package:biblesos/data/database_service.dart';
 import 'package:share_plus/share_plus.dart';
@@ -141,21 +142,31 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 ),
               ),
               const Spacer(),
-              TextButton(
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                onPressed: () {},
-                child: Text(
-                  'SESOTHO',
-                  style: TextStyle(
-                    color: theme.textTheme.bodyLarge?.color,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
+              Consumer(
+                builder: (context, ref, child) {
+                  final translation = ref.watch(selectedTranslationProvider);
+                  return TextButton(
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const TranslationsScreen()),
+                      );
+                    },
+                    child: Text(
+                      translation.abv.toUpperCase(),
+                      style: TextStyle(
+                        color: theme.textTheme.bodyLarge?.color,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(width: 8),
               PopupMenuButton<String>(
