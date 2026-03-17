@@ -63,4 +63,33 @@ class ApiService {
       throw Exception('Error fetching questions: $e');
     }
   }
+
+  Future<List<int>> downloadTranslation(String abv, {void Function(double progress)? onProgress}) async {
+    try {
+      final client = http.Client();
+      final request = http.Request('GET', Uri.parse('$_baseUrl/translations/$abv/download'));
+      final response = await client.send(request);
+
+      if (response.statusCode == 200) {
+        final totalBytes = response.contentLength ?? 0;
+        int receivedBytes = 0;
+        final List<int> bytes = [];
+
+        await for (var chunk in response.stream) {
+          bytes.addAll(chunk);
+          receivedBytes += chunk.length;
+          if (totalBytes > 0 && onProgress != null) {
+            onProgress(receivedBytes / totalBytes);
+          }
+        }
+        client.close();
+        return bytes;
+      } else {
+        client.close();
+        throw Exception('Failed to download translation: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error downloading translation: $e');
+    }
+  }
 }

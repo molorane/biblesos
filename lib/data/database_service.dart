@@ -13,29 +13,40 @@ class DatabaseService {
 
   DatabaseService._internal();
 
+  static String _currentTranslationAbv = 'Sesotho'; // Default
+
+  Future<String> get _localPath async {
+    final directory = await getDatabasesPath();
+    return directory;
+  }
+
+  Future<String> getTranslationPath(String abv) async {
+    return p.join(await _localPath, '$abv.db');
+  }
+
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDatabase();
+    _database = await _initDatabase(_currentTranslationAbv);
     return _database!;
   }
 
-  Future<Database> _initDatabase() async {
-    String path = p.join(await getDatabasesPath(), 'Sesotho.db');
+  Future<Database> _initDatabase(String abv) async {
+    String path = await getTranslationPath(abv);
     bool exists = await databaseExists(path);
 
     if (!exists) {
-      // Creating new copy from assets
-      try {
-        await Directory(p.dirname(path)).create(recursive: true);
-      } catch (_) {}
+      // For the default Sesotho, we copy from assets if it doesn't exist
+      if (abv == 'Sesotho' || abv == 'SOS') {
+        try {
+          await Directory(p.dirname(path)).create(recursive: true);
+        } catch (_) {}
 
-      ByteData data = await rootBundle.load(p.join('assets', 'db', 'Sesotho.db'));
-      List<int> bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-
-      // Write and flush the bytes written
-      await File(path).writeAsBytes(bytes, flush: true);
-    } else {
-      // Opening existing database
+        ByteData data = await rootBundle.load(p.join('assets', 'db', 'Sesotho.db'));
+        List<int> bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+        await File(path).writeAsBytes(bytes, flush: true);
+      } else {
+        throw Exception('Database for $abv does not exist and is not the default.');
+      }
     }
 
     return await openDatabase(
@@ -314,5 +325,34 @@ class DatabaseService {
       result.putIfAbsent(highlight.verseId, () => []).add(highlight);
     }
     return result;
+  }
+
+  Future<void> saveDownloadedTranslation(String abv, List<int> bytes) async {
+    final path = await getTranslationPath(abv);
+    final file = File(path);
+    await file.writeAsBytes(bytes, flush: true);
+  }
+
+  Future<bool> isTranslationDownloaded(String abv) async {
+    if (abv == 'Sesotho' || abv == 'SOS') return true;
+    final path = await getTranslationPath(abv);
+    return await File(path).exists();
+  }
+
+  Future<void> switchToTranslation(String abv) async {
+    if (_currentTranslationAbv == abv) return;
+    
+    // Check if it exists
+    if (!await isTranslationDownloaded(abv)) {
+      throw Exception('Translation $abv is not downloaded.');
+    }
+
+    if (_database != null) {
+      await _database!.close();
+      _database = null;
+    }
+    
+    _currentTranslationAbv = abv;
+    // Database will be re-initialized on next access
   }
 }

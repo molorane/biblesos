@@ -24,6 +24,9 @@ abstract class BibleRepository {
   Future<void> deleteTextHighlight(int verseId, int start, int end);
   Future<Map<int, List<TextHighlight>>> getTextHighlights(int bookId, int chapter);
   Future<List<Translation>> getTranslations();
+  Future<void> downloadTranslation(String abv, {void Function(double progress)? onProgress});
+  Future<bool> isTranslationDownloaded(String abv);
+  Future<void> setActiveTranslation(String abv);
   
   // Quiz
   Future<List<Level>> getLevels();
@@ -174,5 +177,21 @@ class BibleRepositoryImpl implements BibleRepository {
   @override
   Future<List<Question>> getQuestionsByQuiz(int quizId) async {
     return await _apiService.fetchQuestionsByQuiz(quizId);
+  }
+
+  @override
+  Future<void> downloadTranslation(String abv, {void Function(double progress)? onProgress}) async {
+    final bytes = await _apiService.downloadTranslation(abv, onProgress: onProgress);
+    await _dbService.saveDownloadedTranslation(abv, bytes);
+  }
+
+  @override
+  Future<bool> isTranslationDownloaded(String abv) async {
+    return await _dbService.isTranslationDownloaded(abv);
+  }
+
+  @override
+  Future<void> setActiveTranslation(String abv) async {
+    await _dbService.switchToTranslation(abv);
   }
 }

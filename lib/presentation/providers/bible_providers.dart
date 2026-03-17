@@ -292,13 +292,36 @@ class SelectedTranslationNotifier extends Notifier<Translation> {
     return Translation(abv: abv, name: name, version: '0.0.0');
   }
 
-  void set(Translation translation) async {
+  Future<void> set(Translation translation) async {
     state = translation;
     await StorageService.setString(_keyAbv, translation.abv);
     await StorageService.setString(_keyName, translation.name);
+    
+    // Switch the active database in the repository
+    final repository = ref.read(bibleRepositoryProvider);
+    await repository.setActiveTranslation(translation.abv);
+    
+    // Invalidate providers that depend on the database
+    ref.invalidate(booksProvider);
+    ref.invalidate(chaptersVersesProviderFamily);
+    ref.invalidate(searchResultsProvider);
+    // Add other database-dependent providers as needed
   }
 }
 
 final selectedTranslationProvider = NotifierProvider<SelectedTranslationNotifier, Translation>(
   SelectedTranslationNotifier.new,
 );
+
+final downloadedTranslationsProvider = FutureProvider<Set<String>>((ref) async {
+  final repository = ref.watch(bibleRepositoryProvider);
+  final translations = await ref.watch(translationsProvider.future);
+  
+  final downloaded = <String>{};
+  for (var t in translations) {
+    if (await repository.isTranslationDownloaded(t.abv)) {
+      downloaded.add(t.abv);
+    }
+  }
+  return downloaded;
+});
