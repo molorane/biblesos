@@ -13,7 +13,14 @@ class DatabaseService {
 
   DatabaseService._internal();
 
-  static String _currentTranslationAbv = 'Sesotho'; // Default
+  static String? _currentTranslationAbvCache;
+  static String get _currentTranslationAbv {
+    _currentTranslationAbvCache ??= StorageService.getString('selected_translation_abv') ?? 'SESOTHO';
+    return _currentTranslationAbvCache!;
+  }
+  static set _currentTranslationAbv(String value) {
+    _currentTranslationAbvCache = value;
+  }
 
   Future<String> get _localPath async {
     final directory = await getDatabasesPath();
@@ -36,7 +43,7 @@ class DatabaseService {
 
     if (!exists) {
       // For the default Sesotho, we copy from assets if it doesn't exist
-      if (abv == 'Sesotho' || abv == 'SOS') {
+      if (abv.toUpperCase() == 'SESOTHO' || abv.toUpperCase() == 'SOS' || abv == 'Sesotho') {
         try {
           await Directory(p.dirname(path)).create(recursive: true);
         } catch (_) {}
@@ -334,7 +341,7 @@ class DatabaseService {
   }
 
   Future<bool> isTranslationDownloaded(String abv) async {
-    if (abv == 'Sesotho' || abv == 'SOS') return true;
+    if (abv.toUpperCase() == 'SESOTHO' || abv.toUpperCase() == 'SOS' || abv == 'Sesotho') return true;
     final path = await getTranslationPath(abv);
     return await File(path).exists();
   }
@@ -357,7 +364,7 @@ class DatabaseService {
   }
 
   Future<void> deleteTranslation(String abv) async {
-    if (abv == 'Sesotho' || abv == 'SOS') return; // Cannot delete default
+    if (abv.toUpperCase() == 'SESOTHO' || abv.toUpperCase() == 'SOS' || abv == 'Sesotho') return; // Cannot delete default
     
     final path = await getTranslationPath(abv);
     final file = File(path);
