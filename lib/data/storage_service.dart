@@ -43,6 +43,8 @@ class StorageService {
   static const String keyLastChapter = 'last_chapter';
   static const String keyLastVerse = 'last_verse';
   static const String keyWordsOfChristInRed = 'words_of_christ_in_red';
+  static const String keySelectionViewMode = 'selection_view_mode';
+  static const String keyHasDiscoveredToggle = 'has_discovered_toggle';
 
   static int getLastBookId() => getInt(keyLastBookId) ?? 1; // Default to Genesis
   static int getLastChapter() => getInt(keyLastChapter) ?? 1;

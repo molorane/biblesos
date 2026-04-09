@@ -5,6 +5,8 @@ import 'package:biblesos/data/repositories/topic_repository.dart';
 import 'package:biblesos/domain/entities/bible_models.dart';
 import 'package:biblesos/data/storage_service.dart';
 
+enum SelectionViewMode { grid, list }
+
 // Theme persistence via Hive
 class ThemeModeNotifier extends Notifier<ThemeMode> {
   static const _key = 'theme_mode';
@@ -240,6 +242,29 @@ class WordsOfChristInRedNotifier extends Notifier<bool> {
 
 final wordsOfChristInRedProvider = NotifierProvider<WordsOfChristInRedNotifier, bool>(
   WordsOfChristInRedNotifier.new,
+);
+
+class SelectionViewModeNotifier extends Notifier<SelectionViewMode> {
+  @override
+  SelectionViewMode build() {
+    final mode = StorageService.getString(StorageService.keySelectionViewMode);
+    return mode == 'list' ? SelectionViewMode.list : SelectionViewMode.grid;
+  }
+
+  void toggle() {
+    final newMode = state == SelectionViewMode.grid ? SelectionViewMode.list : SelectionViewMode.grid;
+    state = newMode;
+    StorageService.setString(StorageService.keySelectionViewMode, newMode.name);
+  }
+
+  void setMode(SelectionViewMode mode) {
+    state = mode;
+    StorageService.setString(StorageService.keySelectionViewMode, mode.name);
+  }
+}
+
+final selectionViewModeProvider = NotifierProvider<SelectionViewModeNotifier, SelectionViewMode>(
+  SelectionViewModeNotifier.new,
 );
 
 // Topic Providers
