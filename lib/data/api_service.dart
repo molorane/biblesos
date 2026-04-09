@@ -9,7 +9,9 @@ class ApiService {
 
   Future<List<Translation>> fetchTranslations() async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/translations'));
+      final response = await http
+          .get(Uri.parse('$_baseUrl/translations'))
+          .timeout(const Duration(seconds: 15));
       
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -24,7 +26,9 @@ class ApiService {
 
   Future<List<Level>> fetchLevels() async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/levels'));
+      final response = await http
+          .get(Uri.parse('$_baseUrl/levels'))
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((json) => Level.fromJson(json)).toList();
@@ -38,7 +42,9 @@ class ApiService {
 
   Future<List<Quiz>> fetchQuizzesByLevel(int levelId) async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/levels/$levelId/quizzes'));
+      final response = await http
+          .get(Uri.parse('$_baseUrl/levels/$levelId/quizzes'))
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((json) => Quiz.fromJson(json)).toList();
@@ -52,7 +58,9 @@ class ApiService {
 
   Future<List<Question>> fetchQuestionsByQuiz(int quizId) async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/levels/quizzes/$quizId/questions'));
+      final response = await http
+          .get(Uri.parse('$_baseUrl/levels/quizzes/$quizId/questions'))
+          .timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((json) => Question.fromJson(json)).toList();
@@ -68,7 +76,9 @@ class ApiService {
     try {
       final client = http.Client();
       final request = http.Request('GET', Uri.parse('$_baseUrl/translations/$abv/download'));
-      final response = await client.send(request);
+      final response = await client
+          .send(request)
+          .timeout(const Duration(seconds: 60));
 
       if (response.statusCode == 200) {
         final totalBytes = response.contentLength ?? 0;
