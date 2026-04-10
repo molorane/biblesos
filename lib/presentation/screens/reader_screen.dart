@@ -9,6 +9,7 @@ import 'package:biblesos/presentation/screens/translations_screen.dart';
 import 'package:biblesos/data/storage_service.dart';
 import 'package:biblesos/data/database_service.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 class ReaderScreen extends ConsumerStatefulWidget {
   const ReaderScreen({super.key});
@@ -289,42 +290,28 @@ class ChapterView extends ConsumerStatefulWidget {
 }
 
 class _ChapterViewState extends ConsumerState<ChapterView> {
-  final ScrollController _scrollController = ScrollController();
-  final Map<int, GlobalKey> _verseKeys = {};
+  final ItemScrollController _itemScrollController = ItemScrollController();
+  final ItemPositionsListener _itemPositionsListener = ItemPositionsListener.create();
 
   @override
   void initState() {
     super.initState();
-    // We'll handle initial scroll in build() when data arrives
   }
 
   @override
   void dispose() {
-    _scrollController.dispose();
     super.dispose();
   }
 
-  void _scrollToVerseIfSelected(int verse) {
+  void _scrollToVerse(int verse) {
     if (!mounted || verse < 1) return;
     
-    // Give it a longer delay to ensure the ListView has had time to layout
-    // and keys are attached for all (visible) items.
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (!mounted) return;
-      final key = _verseKeys[verse];
-      if (key != null && key.currentContext != null) {
-        Scrollable.ensureVisible(
-          key.currentContext!,
-          duration: const Duration(milliseconds: 600),
-          curve: Curves.easeInOut,
-          alignment: 0.1, // Scroll to top of the screen with a small margin
-        );
-      } else {
-        // If key is not available yet, it might be because ListView hasn't built it.
-        // We can try one more time or consider a different approach if this fails.
-        debugPrint('Verse $verse key or context not found for scrolling');
-      }
-    });
+    _itemScrollController.scrollTo(
+      index: verse - 1,
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeInOut,
+      alignment: 0.1,
+    );
   }
 
   void _showVerseActions(BuildContext context, WidgetRef ref, Verse verse) {
@@ -634,31 +621,20 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
     // Listen to verse changes to trigger scrolling if we're on the current chapter
     ref.listen<int>(selectedVerseProvider, (previous, next) {
       if (next > 0) {
-        _scrollToVerseIfSelected(next);
+        _scrollToVerse(next);
       }
     });
 
     return versesAsync.when(
       data: (verses) {
-        if (verses.isEmpty) return const Center(child: Text('Empty chapter'));
-        
-        // Pre-fill keys
-        for (var verse in verses) {
-          _verseKeys[verse.verse] ??= GlobalKey();
-        }
-
-        // Trigger scroll once data is available
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _scrollToVerseIfSelected(selectedVerse);
-        });
-
         final notes = notesAsync.maybeWhen(data: (d) => d, orElse: () => <int, String>{});
         final bookmarkIds = bookmarkIdsAsync.maybeWhen(data: (d) => d, orElse: () => <int>{});
         final textHighlights = textHighlightsAsync.maybeWhen(data: (d) => d, orElse: () => <int, List<TextHighlight>>{});
 
-        return ListView.builder(
-          controller: _scrollController,
-          cacheExtent: 5000, // Ensure all verses are built for scrolling
+        return ScrollablePositionedList.builder(
+          itemScrollController: _itemScrollController,
+          itemPositionsListener: _itemPositionsListener,
+          initialScrollIndex: (selectedVerse > 0) ? selectedVerse - 1 : 0,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           itemCount: verses.length,
           itemBuilder: (context, index) {
@@ -673,7 +649,6 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
               borderRadius: BorderRadius.circular(8),
               child: SelectionArea(
                 child: AnimatedContainer(
-                  key: _verseKeys[verse.verse],
                   duration: const Duration(milliseconds: 500),
                   margin: const EdgeInsets.only(bottom: 4.0),
                   padding: const EdgeInsets.all(8.0),
