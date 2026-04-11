@@ -8,7 +8,7 @@
 PRODUCT_NAME = biblesos
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.biblesos.biblesos
+PRODUCT_BUNDLE_IDENTIFIER = za.co.mosiahorizon.biblesos
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.biblesos. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 za.co.mosiahorizon. All rights reserved.
