@@ -98,7 +98,6 @@ class HomeContent extends ConsumerWidget {
           children: [
             const VerseOfTheDayCard(),
             const QuickAccessMenu(),
-            const DailyMannaButton(),
             const SizedBox(height: 24),
           ],
         ),
@@ -328,6 +327,17 @@ class QuickAccessMenu extends StatelessWidget {
 
     final menuItems = [
       _MenuItem(
+        label: 'Daily Manna',
+        icon: Icons.coffee_outlined,
+        color: const Color(0xFF66BB6A),
+        onTap: () async {
+          final Uri url = Uri.parse('https://dailymanna.app');
+          if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+            // Error handling
+          }
+        },
+      ),
+      _MenuItem(
         label: 'Doctrines',
         icon: Icons.account_balance_outlined,
         color: const Color(0xFF4A90E2),
@@ -428,7 +438,7 @@ class QuickAccessMenu extends StatelessWidget {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: ResponsiveUtils.getCrossAxisCount(context, phone: 3, tablet: 7, desktop: 7),
+          crossAxisCount: ResponsiveUtils.getCrossAxisCount(context, phone: 3, tablet: 8, desktop: 8),
           mainAxisSpacing: 8,
           crossAxisSpacing: 8,
           childAspectRatio: 0.95,
@@ -501,89 +511,4 @@ class _MenuItem {
   });
 }
 
-class DailyMannaButton extends StatelessWidget {
-  const DailyMannaButton({super.key});
 
-  Future<void> _launchUrl() async {
-    final Uri url = Uri.parse('https://dailymanna.app');
-    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-      throw Exception('Could not launch $url');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final horizontalPadding = ResponsiveUtils.getHorizontalPadding(context);
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 8),
-      child: InkWell(
-        onTap: _launchUrl,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          height: 80,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: const LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [
-                Color(0xFFE57373), // Coral/Red
-                Color(0xFF81C784), // Soft Green
-              ],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              Positioned(
-                right: 20,
-                top: 0,
-                bottom: 0,
-                child: Center(
-                  child: Container(
-                    width: 50,
-                    height: 50,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.coffee_outlined,
-                      color: Color(0xFF66BB6A),
-                      size: 30,
-                    ),
-                  ),
-                ),
-              ),
-              const Padding(
-                padding: EdgeInsets.only(left: 30),
-                child: Center(
-                  child: Row(
-                    children: [
-                      Text(
-                        'Daily Manna',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
