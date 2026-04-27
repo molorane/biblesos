@@ -39,8 +39,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       ref.read(selectedChapterProvider.notifier).set(widget.chapter!);
     }
     
-    final int initialChapter = (widget.chapter ?? ref.read(selectedChapterProvider))!;
-    _pageController = PageController(initialPage: initialChapter - 1);
+    _pageController = PageController();
   }
 
   @override
@@ -78,9 +77,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       bookName = book.name;
     }
 
-    final chaptersCountAsync = bookId != null 
-        ? ref.watch(chapterCountProvider(bookId))
-        : const AsyncValue<int>.loading();
+    final allChaptersAsync = ref.watch(allChaptersProvider);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -125,15 +122,20 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     context,
                     MaterialPageRoute(builder: (context) => const SelectScriptureScreen()),
                   );
+                  
+                  final newBookId = ref.read(selectedBookIdProvider);
                   final newChapter = ref.read(selectedChapterProvider);
-                  if (_pageController.hasClients) {
-                    setState(() => _isProgrammaticJump = true);
-                    _pageController.jumpToPage(newChapter - 1);
-                    // Reset flag after a short delay since jumpToPage/animateToPage 
-                    // triggers onPageChanged asynchronously or immediately
-                    Future.delayed(const Duration(milliseconds: 100), () {
-                      if (mounted) setState(() => _isProgrammaticJump = false);
-                    });
+                  
+                  final allChapters = ref.read(allChaptersProvider).value;
+                  if (allChapters != null && _pageController.hasClients) {
+                    final index = allChapters.indexWhere((c) => c.bookId == newBookId && c.chapter == newChapter);
+                    if (index >= 0) {
+                      setState(() => _isProgrammaticJump = true);
+                      _pageController.jumpToPage(index);
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        if (mounted) setState(() => _isProgrammaticJump = false);
+                      });
+                    }
                   }
                 },
                 child: Container(
@@ -251,33 +253,43 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           ),
         ),
       ),
-      body: chaptersCountAsync.when(
-        data: (count) {
-          if (count == 0) return const Center(child: Text('No chapters found'));
+      body: allChaptersAsync.when(
+        data: (allChapters) {
+          if (allChapters.isEmpty) return const Center(child: Text('No chapters found'));
+          
+          // Set initial page if not set
+          if (!_pageController.hasClients) {
+            final index = allChapters.indexWhere((c) => c.bookId == bookId && c.chapter == chapter);
+            _pageController = PageController(initialPage: index >= 0 ? index : 0);
+          }
+
           return PageView.builder(
             controller: _pageController,
-            itemCount: count,
+            itemCount: allChapters.length,
             onPageChanged: (index) {
-              final newChapter = index + 1;
+              final info = allChapters[index];
+              final currentBookId = ref.read(selectedBookIdProvider);
               final currentChapter = ref.read(selectedChapterProvider);
               
-              if (newChapter != currentChapter) {
-                ref.read(selectedChapterProvider.notifier).set(newChapter);
+              if (info.bookId != currentBookId || info.chapter != currentChapter) {
+                if (info.bookId != currentBookId) {
+                  ref.read(selectedBookIdProvider.notifier).set(info.bookId);
+                }
+                ref.read(selectedChapterProvider.notifier).set(info.chapter);
                 
                 // Only reset verse if it was a manual swipe (not a programmatic jump)
                 if (!_isProgrammaticJump) {
                   ref.read(selectedVerseProvider.notifier).set(1);
                 }
                 
-                if (bookId != null) {
-                  DatabaseService().addToHistory(bookId, bookName, newChapter);
-                }
+                DatabaseService().addToHistory(info.bookId, info.bookName, info.chapter);
               }
             },
-            itemBuilder: (context, chapterIndex) {
+            itemBuilder: (context, index) {
+              final info = allChapters[index];
               return ChapterView(
-                bookId: bookId ?? 1,
-                chapter: chapterIndex + 1,
+                bookId: info.bookId,
+                chapter: info.chapter,
               );
             },
           );

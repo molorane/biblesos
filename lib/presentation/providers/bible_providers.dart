@@ -7,6 +7,14 @@ import 'package:biblesos/data/storage_service.dart';
 
 enum SelectionViewMode { grid, list }
 
+class ChapterInfo {
+  final int bookId;
+  final String bookName;
+  final int chapter;
+  final int globalIndex;
+  ChapterInfo({required this.bookId, required this.bookName, required this.chapter, required this.globalIndex});
+}
+
 // Theme persistence via Hive
 class ThemeModeNotifier extends Notifier<ThemeMode> {
   static const _key = 'theme_mode';
@@ -37,6 +45,27 @@ final bibleRepositoryProvider = Provider<BibleRepository>((ref) {
 final booksProvider = FutureProvider<List<Book>>((ref) async {
   final repository = ref.watch(bibleRepositoryProvider);
   return await repository.getBooks();
+});
+
+final allChaptersProvider = FutureProvider<List<ChapterInfo>>((ref) async {
+  final books = await ref.watch(booksProvider.future);
+  final repo = ref.watch(bibleRepositoryProvider);
+  final List<ChapterInfo> all = [];
+  int globalIndex = 0;
+  for (var book in books) {
+    // Note: This could be slow if called many times, but we'll cache it.
+    // For even better performance, we could add a method to get all chapter counts at once.
+    final count = await repo.getChapterCount(book.id);
+    for (int i = 1; i <= count; i++) {
+      all.add(ChapterInfo(
+        bookId: book.id,
+        bookName: book.name,
+        chapter: i,
+        globalIndex: globalIndex++,
+      ));
+    }
+  }
+  return all;
 });
 
 // Using Notifier for state management in Riverpod 3.0
