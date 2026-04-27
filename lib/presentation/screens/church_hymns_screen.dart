@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:xml/xml.dart';
 import 'package:biblesos/presentation/widgets/premium_hymn_viewer.dart' as viewer;
+import 'package:biblesos/core/utils/responsive_utils.dart';
 
 // Hymn Model
 class ChurchHymn {
@@ -117,6 +118,7 @@ class _ChurchHymnsScreenState extends ConsumerState<ChurchHymnsScreen> {
     final hymnsAsync = ref.watch(churchHymnsProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final horizontalPadding = ResponsiveUtils.getHorizontalPadding(context);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -148,7 +150,7 @@ class _ChurchHymnsScreenState extends ConsumerState<ChurchHymnsScreen> {
             height: 50,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
               itemCount: languages.length,
               itemBuilder: (context, index) {
                 final lang = languages[index];
@@ -177,7 +179,7 @@ class _ChurchHymnsScreenState extends ConsumerState<ChurchHymnsScreen> {
           ),
           // Search Bar
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 12),
             child: Container(
               decoration: BoxDecoration(
                 color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
@@ -207,9 +209,9 @@ class _ChurchHymnsScreenState extends ConsumerState<ChurchHymnsScreen> {
 
                 if (viewMode == ChurchHymnViewMode.grid) {
                   return GridView.builder(
-                    padding: const EdgeInsets.all(20),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
+                    padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 20),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: ResponsiveUtils.getCrossAxisCount(context, phone: 4, tablet: 6, desktop: 8),
                       mainAxisSpacing: 16,
                       crossAxisSpacing: 16,
                       childAspectRatio: 1,
@@ -222,7 +224,7 @@ class _ChurchHymnsScreenState extends ConsumerState<ChurchHymnsScreen> {
                   );
                 } else {
                   return ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
                     itemCount: filteredHymns.length,
                     itemBuilder: (context, index) {
                       final hymn = filteredHymns[index];

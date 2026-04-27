@@ -4,6 +4,7 @@ import 'package:biblesos/presentation/providers/bible_providers.dart';
 import 'package:biblesos/domain/entities/bible_models.dart';
 import 'package:biblesos/core/utils/bible_utils.dart';
 import 'package:biblesos/data/storage_service.dart';
+import 'package:biblesos/core/utils/responsive_utils.dart';
 
 class SelectScriptureScreen extends ConsumerStatefulWidget {
   const SelectScriptureScreen({super.key});
@@ -88,6 +89,7 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen>
     final booksAsync = ref.watch(booksProvider);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final isTablet = ResponsiveUtils.isTablet(context);
 
     final selectionMode = ref.watch(selectionViewModeProvider);
 
@@ -115,10 +117,79 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen>
       body: Column(
         children: [
           _buildSelectorHeader(theme, isDark, selectionMode),
-          _buildTabs(theme, isDark),
-          Expanded(child: _buildContent(booksAsync, theme, isDark, selectionMode)),
+          if (!isTablet) _buildTabs(theme, isDark),
+          Expanded(
+            child: isTablet
+                ? _buildTabletLayout(booksAsync, theme, isDark, selectionMode)
+                : _buildContent(booksAsync, theme, isDark, selectionMode),
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTabletLayout(
+    AsyncValue<List<Book>> booksAsync,
+    ThemeData theme,
+    bool isDark,
+    SelectionViewMode mode,
+  ) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Books Column
+        Expanded(
+          flex: 2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Text('BOOK', style: theme.textTheme.labelLarge?.copyWith(color: const Color(0xFF4DB66A), fontWeight: FontWeight.bold)),
+              ),
+              Expanded(
+                child: booksAsync.when(
+                  data: (books) => mode == SelectionViewMode.grid
+                      ? _buildBookGrid(books, theme, isDark)
+                      : _buildBookList(books, theme, isDark),
+                  loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF4DB66A))),
+                  error: (e, s) => Center(child: Text('Error: $e')),
+                ),
+              ),
+            ],
+          ),
+        ),
+        VerticalDivider(width: 1, thickness: 1, color: isDark ? Colors.white10 : Colors.grey.shade200),
+        // Chapters Column
+        Expanded(
+          flex: 1,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Text('CHAPTER', style: theme.textTheme.labelLarge?.copyWith(color: const Color(0xFF4DB66A), fontWeight: FontWeight.bold)),
+              ),
+              Expanded(child: _buildChapterGrid(theme, isDark)),
+            ],
+          ),
+        ),
+        VerticalDivider(width: 1, thickness: 1, color: isDark ? Colors.white10 : Colors.grey.shade200),
+        // Verses Column
+        Expanded(
+          flex: 1,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                child: Text('VERSE', style: theme.textTheme.labelLarge?.copyWith(color: const Color(0xFF4DB66A), fontWeight: FontWeight.bold)),
+              ),
+              Expanded(child: _buildVerseGrid(theme, isDark)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -314,8 +385,8 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen>
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 6,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: ResponsiveUtils.getCrossAxisCount(context, phone: 6, tablet: 6, desktop: 12),
             mainAxisSpacing: 10,
             crossAxisSpacing: 10,
             childAspectRatio: 1,
@@ -442,8 +513,8 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen>
     return chaptersAsync.when(
       data: (count) => GridView.builder(
         padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 5,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: ResponsiveUtils.getCrossAxisCount(context, phone: 5, tablet: 3, desktop: 6),
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
         ),
@@ -486,7 +557,7 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen>
         },
       ),
       loading: () =>
-          Center(child: CircularProgressIndicator(color: theme.primaryColor)),
+          const Center(child: CircularProgressIndicator(color: Color(0xFF4DB66A))),
       error: (e, s) => Center(
         child: Text(
           'Error: $e',
@@ -513,8 +584,8 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen>
     return versesAsync.when(
       data: (count) => GridView.builder(
         padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 5,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: ResponsiveUtils.getCrossAxisCount(context, phone: 5, tablet: 3, desktop: 6),
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
         ),
@@ -551,7 +622,7 @@ class _SelectScriptureScreenState extends ConsumerState<SelectScriptureScreen>
         },
       ),
       loading: () =>
-          Center(child: CircularProgressIndicator(color: theme.primaryColor)),
+          const Center(child: CircularProgressIndicator(color: Color(0xFF4DB66A))),
       error: (e, s) => Center(
         child: Text(
           'Error: $e',

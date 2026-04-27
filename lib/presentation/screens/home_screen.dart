@@ -14,6 +14,7 @@ import 'package:biblesos/presentation/screens/church_hymns_screen.dart';
 import 'package:biblesos/presentation/screens/topics_screen.dart';
 import 'package:biblesos/presentation/screens/doctrines_screen.dart';
 import 'package:biblesos/presentation/screens/quizzes_screen.dart';
+import 'package:biblesos/core/utils/responsive_utils.dart';
 import 'package:share_plus/share_plus.dart';
 
 class MainNavigator extends ConsumerStatefulWidget {
@@ -121,6 +122,7 @@ class VerseOfTheDayCard extends ConsumerWidget {
     '13.jpg',
     '14.jpg',
     '15.jpg',
+    '14.jpg',
   ];
 
   String _getSelectedImage() {
@@ -135,6 +137,7 @@ class VerseOfTheDayCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final verseAsync = ref.watch(verseOfTheDayProvider);
+    final horizontalPadding = ResponsiveUtils.getHorizontalPadding(context);
 
     return verseAsync.when(
       data: (verse) {
@@ -155,7 +158,7 @@ class VerseOfTheDayCard extends ConsumerWidget {
           },
           borderRadius: BorderRadius.circular(24),
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            margin: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 12),
             height: 280,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
@@ -300,7 +303,7 @@ class VerseOfTheDayCard extends ConsumerWidget {
         );
       },
       loading: () => Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        margin: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 12),
         height: 280,
         decoration: BoxDecoration(
           color: theme.cardColor,
@@ -320,6 +323,7 @@ class QuickAccessMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final horizontalPadding = ResponsiveUtils.getHorizontalPadding(context);
 
     final menuItems = [
       _MenuItem(
@@ -391,7 +395,7 @@ class QuickAccessMenu extends StatelessWidget {
     ];
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      margin: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 4),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withOpacity(0.03) : Colors.white,
@@ -411,8 +415,8 @@ class QuickAccessMenu extends StatelessWidget {
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: ResponsiveUtils.getCrossAxisCount(context, phone: 3, tablet: 6, desktop: 6),
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
           childAspectRatio: 1.15,
@@ -490,8 +494,10 @@ class DailyMannaButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final horizontalPadding = ResponsiveUtils.getHorizontalPadding(context);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 8),
       child: InkWell(
         onTap: _launchUrl,
         borderRadius: BorderRadius.circular(20),

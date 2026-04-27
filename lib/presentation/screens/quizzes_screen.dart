@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:biblesos/domain/entities/quiz_models.dart';
 import 'package:biblesos/presentation/providers/quiz_providers.dart';
 import 'package:biblesos/presentation/screens/quiz_play_screen.dart';
+import 'package:biblesos/core/utils/responsive_utils.dart';
 
 class QuizzesScreen extends ConsumerWidget {
   const QuizzesScreen({super.key});
@@ -14,6 +15,7 @@ class QuizzesScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final pastQuizzes = ref.watch(pastQuizzesProvider);
     final levelsAsync = ref.watch(levelsProvider);
+    final horizontalPadding = ResponsiveUtils.getHorizontalPadding(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -26,7 +28,7 @@ class QuizzesScreen extends ConsumerWidget {
           children: [
             if (pastQuizzes.isNotEmpty) ...[
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                padding: EdgeInsets.fromLTRB(horizontalPadding + 4, 16, horizontalPadding + 4, 8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -48,7 +50,7 @@ class QuizzesScreen extends ConsumerWidget {
                 height: 120,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                   itemCount: pastQuizzes.length,
                   itemBuilder: (context, index) {
                     final result = pastQuizzes[index];
@@ -59,7 +61,7 @@ class QuizzesScreen extends ConsumerWidget {
               const SizedBox(height: 16),
             ],
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+              padding: EdgeInsets.fromLTRB(horizontalPadding + 4, 8, horizontalPadding + 4, 8),
               child: Text(
                 'Browse Quizzes',
                 style: GoogleFonts.inter(
@@ -72,7 +74,7 @@ class QuizzesScreen extends ConsumerWidget {
               data: (levels) => ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                 itemCount: levels.length,
                 itemBuilder: (context, index) {
                   final level = levels[index];
@@ -218,8 +220,8 @@ class _LevelSection extends ConsumerWidget {
           data: (quizzes) => GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: ResponsiveUtils.getCrossAxisCount(context, phone: 2, tablet: 3, desktop: 4),
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
               childAspectRatio: 1.5,

@@ -297,6 +297,15 @@ class DatabaseService {
 
   Future<void> saveTextHighlight(int verseId, int start, int end, String color) async {
     final db = await database;
+
+    // Remove any overlapping highlights for this verse to prevent duplicates/overlap bugs
+    // Overlap condition: start1 < end2 AND end1 > start2
+    await db.delete(
+      'text_highlights',
+      where: 'verse_id = ? AND start_offset < ? AND end_offset > ?',
+      whereArgs: [verseId, end, start],
+    );
+
     await db.insert(
       'text_highlights',
       {

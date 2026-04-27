@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:biblesos/presentation/widgets/premium_hymn_viewer.dart'
     as viewer;
 import 'package:biblesos/core/utils/hymn_utils.dart';
+import 'package:biblesos/core/utils/responsive_utils.dart';
 
 // View modes: Grid or List
 enum HymnViewMode { grid, list }
@@ -55,6 +56,7 @@ class _TsaSioneScreenState extends ConsumerState<TsaSioneScreen> {
     final isDark = theme.brightness == Brightness.dark;
     final hymns = HymnUtils.getHymns();
     final searchQuery = ref.watch(hymnSearchQueryProvider);
+    final horizontalPadding = ResponsiveUtils.getHorizontalPadding(context);
 
     // Filter hymns based on search query
     final filteredHymns = hymns.entries.where((entry) {
@@ -102,7 +104,7 @@ class _TsaSioneScreenState extends ConsumerState<TsaSioneScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            padding: EdgeInsets.fromLTRB(horizontalPadding, 8, horizontalPadding, 16),
             child: TextField(
               onChanged: (value) =>
                   ref.read(hymnSearchQueryProvider.notifier).set(value),
@@ -127,10 +129,9 @@ class _TsaSioneScreenState extends ConsumerState<TsaSioneScreen> {
           Expanded(
             child: viewMode == HymnViewMode.grid
                 ? GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 4,
+                    padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: ResponsiveUtils.getCrossAxisCount(context, phone: 4, tablet: 6, desktop: 8),
                           crossAxisSpacing: 12,
                           mainAxisSpacing: 12,
                         ),
@@ -146,7 +147,7 @@ class _TsaSioneScreenState extends ConsumerState<TsaSioneScreen> {
                     },
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                     itemCount: filteredHymns.length,
                     itemBuilder: (context, index) {
                       final hymn = filteredHymns[index];

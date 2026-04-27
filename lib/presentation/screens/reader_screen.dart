@@ -10,6 +10,7 @@ import 'package:biblesos/data/storage_service.dart';
 import 'package:biblesos/data/database_service.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:biblesos/core/utils/responsive_utils.dart';
 
 class ReaderScreen extends ConsumerStatefulWidget {
   const ReaderScreen({super.key});
@@ -538,7 +539,16 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
   void _handleSelection(Verse verse, TextSelection selection) {
     if (selection.isCollapsed) return;
     
-    _showHighlightPickerDialog(context, verse, selection.start, selection.end);
+    // Account for the verse number prefix in the selectable text
+    // The prefix is "${verse.verse} "
+    final prefixLength = verse.verse.toString().length + 1;
+    
+    final start = (selection.start - prefixLength).clamp(0, verse.displayScripture.length);
+    final end = (selection.end - prefixLength).clamp(0, verse.displayScripture.length);
+
+    if (start == end) return; // Selection was only on the verse number
+    
+    _showHighlightPickerDialog(context, verse, start, end);
   }
 
   void _showHighlightPickerDialog(BuildContext context, Verse verse, int start, int end) {
@@ -635,7 +645,10 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
           itemScrollController: _itemScrollController,
           itemPositionsListener: _itemPositionsListener,
           initialScrollIndex: (selectedVerse > 0) ? selectedVerse - 1 : 0,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          padding: EdgeInsets.symmetric(
+            horizontal: ResponsiveUtils.getHorizontalPadding(context),
+            vertical: 10,
+          ),
           itemCount: verses.length,
           itemBuilder: (context, index) {
             final verse = verses[index];
@@ -701,7 +714,7 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
                               Icon(Icons.note_alt, size: 14, color: Colors.blue.withOpacity(0.7)),
                           ],
                         ),
-                    ),
+                      ),
                   ],
                 ),
               ),
@@ -798,33 +811,45 @@ class FontSettingsModal extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final font = fonts[index];
                 final isSelected = currentFamily == font;
-                return GestureDetector(
-                  onTap: () => ref.read(readerFontFamilyProvider.notifier).set(font),
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 12),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xFF4DB66A) : (isDark ? Colors.white12 : Colors.grey.shade100),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected ? Colors.transparent : Colors.grey.withOpacity(0.2),
-                      ),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(
                       font,
-                      style: GoogleFonts.getFont(
-                        font,
-                        color: isSelected ? Colors.white : theme.textTheme.bodyLarge?.color,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                      ),
+                      style: GoogleFonts.getFont(font, fontSize: 12),
                     ),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      if (selected) {
+                        ref.read(readerFontFamilyProvider.notifier).set(font);
+                      }
+                    },
+                    selectedColor: const Color(0xFF4DB66A).withOpacity(0.2),
+                    checkmarkColor: const Color(0xFF4DB66A),
                   ),
                 );
               },
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Words of Christ in Red',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+              Switch(
+                value: ref.watch(wordsOfChristInRedProvider),
+                activeColor: const Color(0xFF4DB66A),
+                onChanged: (val) => ref.read(wordsOfChristInRedProvider.notifier).set(val),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     );
