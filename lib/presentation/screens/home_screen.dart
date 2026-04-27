@@ -14,6 +14,7 @@ import 'package:biblesos/presentation/screens/church_hymns_screen.dart';
 import 'package:biblesos/presentation/screens/topics_screen.dart';
 import 'package:biblesos/presentation/screens/doctrines_screen.dart';
 import 'package:biblesos/presentation/screens/quizzes_screen.dart';
+import 'package:biblesos/presentation/screens/reading_plan_overview_screen.dart';
 import 'package:biblesos/core/utils/responsive_utils.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -378,6 +379,17 @@ class QuickAccessMenu extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const TsaSioneScreen()),
+          );
+        },
+      ),
+      _MenuItem(
+        label: 'Reading Plan',
+        icon: Icons.auto_stories_outlined,
+        color: const Color(0xFF4A90E2),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ReadingPlanOverviewScreen()),
           );
         },
       ),

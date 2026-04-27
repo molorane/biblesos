@@ -58,7 +58,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           await db.execute('CREATE INDEX IF NOT EXISTS idx_bible_book_chapter ON bible (book, chapter)');
@@ -108,6 +108,37 @@ class DatabaseService {
             )
           ''');
         }
+        if (oldVersion < 5) {
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS reading_plans (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              title TEXT,
+              start_date TEXT,
+              book_order TEXT,
+              status INTEGER DEFAULT 0
+            )
+          ''');
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS reading_plan_days (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              plan_id INTEGER,
+              day_number INTEGER,
+              date TEXT,
+              FOREIGN KEY (plan_id) REFERENCES reading_plans (id) ON DELETE CASCADE
+            )
+          ''');
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS reading_plan_chapters (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              day_id INTEGER,
+              book_id INTEGER,
+              book_name TEXT,
+              chapter INTEGER,
+              is_read INTEGER DEFAULT 0,
+              FOREIGN KEY (day_id) REFERENCES reading_plan_days (id) ON DELETE CASCADE
+            )
+          ''');
+        }
       },
       onCreate: (db, version) async {
         await db.execute('CREATE INDEX IF NOT EXISTS idx_bible_book_chapter ON bible (book, chapter)');
@@ -139,6 +170,35 @@ class DatabaseService {
             end_offset INTEGER,
             color TEXT,
             UNIQUE(verse_id, start_offset, end_offset)
+          )
+        ''');
+        await db.execute('''
+          CREATE TABLE reading_plans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT,
+            start_date TEXT,
+            book_order TEXT,
+            status INTEGER DEFAULT 0
+          )
+        ''');
+        await db.execute('''
+          CREATE TABLE reading_plan_days (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            plan_id INTEGER,
+            day_number INTEGER,
+            date TEXT,
+            FOREIGN KEY (plan_id) REFERENCES reading_plans (id) ON DELETE CASCADE
+          )
+        ''');
+        await db.execute('''
+          CREATE TABLE reading_plan_chapters (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            day_id INTEGER,
+            book_id INTEGER,
+            book_name TEXT,
+            chapter INTEGER,
+            is_read INTEGER DEFAULT 0,
+            FOREIGN KEY (day_id) REFERENCES reading_plan_days (id) ON DELETE CASCADE
           )
         ''');
         await db.execute('''
@@ -380,5 +440,86 @@ class DatabaseService {
     if (await file.exists()) {
       await file.delete();
     }
+  }
+
+  // --- Reading Plan Methods ---
+
+  Future<int> saveReadingPlan(Map<String, dynamic> planData) async {
+    final db = await database;
+    return await db.insert('reading_plans', planData);
+  }
+
+  Future<void> saveReadingPlanDay(Map<String, dynamic> dayData, List<Map<String, dynamic>> chaptersData) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      final dayId = await txn.insert('reading_plan_days', dayData);
+      for (var chapter in chaptersData) {
+        final chapterData = Map<String, dynamic>.from(chapter);
+        chapterData['day_id'] = dayId;
+        await txn.insert('reading_plan_chapters', chapterData);
+      }
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> getReadingPlans() async {
+    final db = await database;
+    return await db.query('reading_plans', orderBy: 'id DESC');
+  }
+
+  Future<Map<String, dynamic>?> getActiveReadingPlan() async {
+    final db = await database;
+    final plans = await db.query('reading_plans', where: 'status = 0', limit: 1);
+    return plans.isNotEmpty ? plans.first : null;
+  }
+
+  Future<List<Map<String, dynamic>>> getReadingPlanDays(int planId) async {
+    final db = await database;
+    return await db.query('reading_plan_days', where: 'plan_id = ?', orderBy: 'day_number ASC', whereArgs: [planId]);
+  }
+
+  Future<List<Map<String, dynamic>>> getReadingPlanChapters(int dayId) async {
+    final db = await database;
+    return await db.query('reading_plan_chapters', where: 'day_id = ?', whereArgs: [dayId]);
+  }
+
+  Future<void> markChapterAsRead(int bookId, int chapter, bool isRead) async {
+    final db = await database;
+    await db.update(
+      'reading_plan_chapters',
+      {'is_read': isRead ? 1 : 0},
+      where: 'book_id = ? AND chapter = ?',
+      whereArgs: [bookId, chapter],
+    );
+  }
+
+  Future<bool> isChapterRead(int bookId, int chapter) async {
+    final db = await database;
+    final results = await db.query(
+      'reading_plan_chapters',
+      where: 'book_id = ? AND chapter = ? AND is_read = 1',
+      whereArgs: [bookId, chapter],
+    );
+    return results.isNotEmpty;
+  }
+
+  Future<List<Map<String, dynamic>>> getDailyProgress() async {
+    final db = await database;
+    // Get summary of read vs total chapters per day for the active plan
+    return await db.rawQuery('''
+      SELECT d.id, d.day_number, d.date, 
+             COUNT(c.id) as total_chapters,
+             SUM(c.is_read) as read_chapters
+      FROM reading_plan_days d
+      JOIN reading_plan_chapters c ON d.id = c.day_id
+      JOIN reading_plans p ON d.plan_id = p.id
+      WHERE p.status = 0
+      GROUP BY d.id
+      ORDER BY d.day_number ASC
+    ''');
+  }
+
+  Future<void> deleteReadingPlan(int planId) async {
+    final db = await database;
+    await db.delete('reading_plans', where: 'id = ?', whereArgs: [planId]);
   }
 }

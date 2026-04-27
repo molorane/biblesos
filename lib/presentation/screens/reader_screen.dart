@@ -11,9 +11,13 @@ import 'package:biblesos/data/database_service.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:biblesos/core/utils/responsive_utils.dart';
+import 'package:biblesos/presentation/providers/reading_plan_providers.dart';
 
 class ReaderScreen extends ConsumerStatefulWidget {
-  const ReaderScreen({super.key});
+  final int? bookId;
+  final int? chapter;
+
+  const ReaderScreen({super.key, this.bookId, this.chapter});
 
   @override
   ConsumerState<ReaderScreen> createState() => _ReaderScreenState();
@@ -27,7 +31,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   @override
   void initState() {
     super.initState();
-    final initialChapter = ref.read(selectedChapterProvider);
+    
+    if (widget.bookId != null) {
+      ref.read(selectedBookIdProvider.notifier).set(widget.bookId!);
+    }
+    if (widget.chapter != null) {
+      ref.read(selectedChapterProvider.notifier).set(widget.chapter!);
+    }
+    
+    final int initialChapter = (widget.chapter ?? ref.read(selectedChapterProvider))!;
     _pageController = PageController(initialPage: initialChapter - 1);
   }
 
@@ -46,6 +58,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) => const FontSettingsModal(),
     );
   }
@@ -649,8 +664,11 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
             horizontal: ResponsiveUtils.getHorizontalPadding(context),
             vertical: 10,
           ),
-          itemCount: verses.length,
+          itemCount: verses.length + 1,
           itemBuilder: (context, index) {
+            if (index == verses.length) {
+              return _buildMarkAsReadButton(context, ref);
+            }
             final verse = verses[index];
             final isSelected = selectedVerse == verse.verse;
             final hasNote = notes.containsKey(verse.id);
@@ -727,6 +745,53 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
         child: CircularProgressIndicator(color: theme.primaryColor),
       ),
       error: (err, stack) => Center(child: Text('Error loading verses: $err')),
+    );
+  }
+
+  Widget _buildMarkAsReadButton(BuildContext context, WidgetRef ref) {
+    final currentBookId = ref.watch(selectedBookIdProvider);
+    final currentChapter = ref.watch(selectedChapterProvider);
+    
+    if (currentBookId == null) return const SizedBox();
+
+    final isReadAsync = ref.watch(isChapterReadProvider((bookId: currentBookId, chapter: currentChapter)));
+    
+    return isReadAsync.when(
+      data: (isRead) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+        child: ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isRead ? Colors.grey.shade200 : const Color(0xFF4DB66A),
+            foregroundColor: isRead ? Colors.grey.shade700 : Colors.white,
+            padding: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: isRead ? 0 : 2,
+          ),
+          onPressed: () async {
+            await ref.read(readingPlanControllerProvider.notifier).markChapterRead(
+              currentBookId, 
+              currentChapter, 
+              !isRead
+            );
+            ref.invalidate(isChapterReadProvider);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(isRead ? 'Marked as unread' : 'Chapter completed!'),
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+            }
+          },
+          icon: Icon(isRead ? Icons.check_circle : Icons.check_circle_outline),
+          label: Text(
+            isRead ? 'COMPLETED' : 'MARK AS READ',
+            style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
+          ),
+        ),
+      ),
+      loading: () => const SizedBox(height: 100),
+      error: (_, __) => const SizedBox(),
     );
   }
 }

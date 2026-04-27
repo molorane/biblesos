@@ -1,4 +1,5 @@
 import 'package:biblesos/domain/entities/bible_models.dart';
+import 'package:biblesos/domain/entities/reading_plan_models.dart';
 import 'package:biblesos/domain/entities/quiz_models.dart';
 import 'package:biblesos/data/database_service.dart';
 import 'package:biblesos/data/api_service.dart';
@@ -30,6 +31,18 @@ abstract class BibleRepository {
   Future<void> setActiveTranslation(String abv);
   Future<void> deleteTranslation(String abv);
   
+  // Reading Plan
+  Future<int> saveReadingPlan(ReadingPlan plan);
+  Future<void> saveReadingPlanDay(int planId, int dayNumber, DateTime date, List<ReadingPlanChapter> chapters);
+  Future<List<ReadingPlan>> getReadingPlans();
+  Future<ReadingPlan?> getActiveReadingPlan();
+  Future<List<ReadingPlanDay>> getReadingPlanDays(int planId);
+  Future<void> markChapterAsRead(int bookId, int chapter, bool isRead);
+  Future<bool> isChapterRead(int bookId, int chapter);
+  Future<List<Map<String, dynamic>>> getDailyProgress();
+  Future<void> deleteReadingPlan(int planId);
+  Future<List<Map<String, dynamic>>> getReadingPlanChapters(int dayId);
+  
   // Quiz
   Future<List<Level>> getLevels();
   Future<List<Quiz>> getQuizzesByLevel(int levelId);
@@ -39,6 +52,76 @@ abstract class BibleRepository {
 class BibleRepositoryImpl implements BibleRepository {
   final DatabaseService _dbService = DatabaseService();
   final ApiService _apiService = ApiService();
+
+  @override
+  Future<int> saveReadingPlan(ReadingPlan plan) async {
+    return await _dbService.saveReadingPlan(plan.toMap());
+  }
+
+  @override
+  Future<void> saveReadingPlanDay(int planId, int dayNumber, DateTime date, List<ReadingPlanChapter> chapters) async {
+    final dayData = {
+      'plan_id': planId,
+      'day_number': dayNumber,
+      'date': date.toIso8601String(),
+    };
+    final chaptersData = chapters.map((c) => c.toMap(0)).toList();
+    await _dbService.saveReadingPlanDay(dayData, chaptersData);
+  }
+
+  @override
+  Future<List<ReadingPlan>> getReadingPlans() async {
+    final maps = await _dbService.getReadingPlans();
+    return maps.map((m) => ReadingPlan.fromMap(m)).toList();
+  }
+
+  @override
+  Future<ReadingPlan?> getActiveReadingPlan() async {
+    final map = await _dbService.getActiveReadingPlan();
+    return map != null ? ReadingPlan.fromMap(map) : null;
+  }
+
+  @override
+  Future<List<ReadingPlanDay>> getReadingPlanDays(int planId) async {
+    final dayMaps = await _dbService.getReadingPlanDays(planId);
+    final List<ReadingPlanDay> days = [];
+    for (var dMap in dayMaps) {
+      final chaptersMaps = await _dbService.getReadingPlanChapters(dMap['id']);
+      days.add(ReadingPlanDay(
+        id: dMap['id'],
+        planId: dMap['plan_id'],
+        dayNumber: dMap['day_number'],
+        date: DateTime.parse(dMap['date']),
+        chapters: chaptersMaps.map((c) => ReadingPlanChapter.fromMap(c)).toList(),
+      ));
+    }
+    return days;
+  }
+
+  @override
+  Future<void> markChapterAsRead(int bookId, int chapter, bool isRead) async {
+    await _dbService.markChapterAsRead(bookId, chapter, isRead);
+  }
+
+  @override
+  Future<bool> isChapterRead(int bookId, int chapter) async {
+    return await _dbService.isChapterRead(bookId, chapter);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getDailyProgress() async {
+    return await _dbService.getDailyProgress();
+  }
+
+  @override
+  Future<void> deleteReadingPlan(int planId) async {
+    await _dbService.deleteReadingPlan(planId);
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getReadingPlanChapters(int dayId) async {
+    return await _dbService.getReadingPlanChapters(dayId);
+  }
 
   @override
   Future<void> addToHistory(int bookId, String bookName, int chapter) async {
