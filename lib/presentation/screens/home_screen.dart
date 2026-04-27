@@ -428,10 +428,10 @@ class QuickAccessMenu extends StatelessWidget {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: ResponsiveUtils.getCrossAxisCount(context, phone: 3, tablet: 6, desktop: 6),
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-          childAspectRatio: 1.15,
+          crossAxisCount: ResponsiveUtils.getCrossAxisCount(context, phone: 3, tablet: 7, desktop: 7),
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
+          childAspectRatio: 0.95,
         ),
         itemCount: menuItems.length,
         itemBuilder: (context, index) =>
@@ -464,13 +464,20 @@ class QuickAccessMenu extends StatelessWidget {
               ),
               child: Icon(item.icon, color: item.color, size: 20),
             ),
-            const SizedBox(height: 6),
-            Text(
-              item.label,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white.withOpacity(0.9) : Colors.black87,
+            const SizedBox(height: 4),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: Text(
+                item.label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white.withOpacity(0.9) : Colors.black87,
+                  height: 1.1,
+                ),
               ),
             ),
           ],
