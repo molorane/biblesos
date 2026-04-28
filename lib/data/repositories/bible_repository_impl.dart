@@ -9,7 +9,7 @@ import 'package:sqflite/sqflite.dart';
 abstract class BibleRepository {
   Future<List<Book>> getBooks();
   Future<List<Verse>> getChapterVerses(int bookId, int chapter);
-  Future<List<Verse>> search(String query);
+  Future<List<Verse>> search(String query, {int? startBookId, int? endBookId});
   Future<void> toggleBookmark(int verseId);
   Future<List<Verse>> getBookmarks();
   Future<void> saveNote(int verseId, String note);
@@ -149,8 +149,8 @@ class BibleRepositoryImpl implements BibleRepository {
   }
 
   @override
-  Future<List<Verse>> search(String query) async {
-    return await _dbService.searchScriptures(query);
+  Future<List<Verse>> search(String query, {int? startBookId, int? endBookId}) async {
+    return await _dbService.searchScriptures(query, startBookId: startBookId, endBookId: endBookId);
   }
 
   @override

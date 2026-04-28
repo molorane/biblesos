@@ -298,15 +298,24 @@ class DatabaseService {
     return Verse.fromMap(maps.first);
   }
 
-  Future<List<Verse>> searchScriptures(String query) async {
+  Future<List<Verse>> searchScriptures(String query, {int? startBookId, int? endBookId}) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+    String queryStr = '''
       SELECT b.rowid as id, b.*, bk.book as book_name
       FROM bible b
       JOIN book bk ON b.book = bk.id
       WHERE b.scripture LIKE ?
-      LIMIT 50
-    ''', ['%$query%']);
+    ''';
+    List<dynamic> args = ['%$query%'];
+
+    if (startBookId != null && endBookId != null) {
+      queryStr += ' AND b.book >= ? AND b.book <= ?';
+      args.addAll([startBookId, endBookId]);
+    }
+
+    queryStr += ' LIMIT 50';
+
+    final List<Map<String, dynamic>> maps = await db.rawQuery(queryStr, args);
     return maps.map((m) => Verse.fromMap(m)).toList();
   }
   Future<int> getChapterCount(int bookId) async {

@@ -4,6 +4,7 @@ import 'package:biblesos/data/repositories/bible_repository_impl.dart';
 import 'package:biblesos/data/repositories/topic_repository.dart';
 import 'package:biblesos/domain/entities/bible_models.dart';
 import 'package:biblesos/data/storage_service.dart';
+import 'package:biblesos/presentation/models/search_scope.dart';
 
 enum SelectionViewMode { grid, list }
 
@@ -154,12 +155,27 @@ final searchQueryProvider = NotifierProvider<SearchQueryNotifier, String>(
   SearchQueryNotifier.new,
 );
 
+class SearchScopeNotifier extends Notifier<SearchScope> {
+  @override
+  SearchScope build() => SearchScope.wholeBible;
+  void set(SearchScope scope) => state = scope;
+}
+
+final searchScopeProvider = NotifierProvider<SearchScopeNotifier, SearchScope>(
+  SearchScopeNotifier.new,
+);
+
 final searchResultsProvider = FutureProvider<List<Verse>>((ref) async {
   final query = ref.watch(searchQueryProvider);
+  final scope = ref.watch(searchScopeProvider);
   if (query.isEmpty) return [];
   
   final repository = ref.watch(bibleRepositoryProvider);
-  return await repository.search(query);
+  return await repository.search(
+    query,
+    startBookId: scope.startBookId,
+    endBookId: scope.endBookId,
+  );
 });
 
 final bookmarksProvider = FutureProvider<List<Verse>>((ref) async {
