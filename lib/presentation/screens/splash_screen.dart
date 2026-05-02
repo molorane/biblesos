@@ -129,6 +129,16 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
               ),
               const SizedBox(height: 8),
               Text(
+                'Sesotho',
+                style: GoogleFonts.inter(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 1.0,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
                 'Your Daily Source of Truth',
                 style: GoogleFonts.inter(
                   color: Colors.white.withOpacity(0.8),

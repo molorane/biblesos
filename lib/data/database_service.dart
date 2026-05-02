@@ -501,6 +501,16 @@ class DatabaseService {
     );
   }
 
+  Future<List<Map<String, dynamic>>> getReadChaptersForPlan(int planId) async {
+    final db = await database;
+    return await db.rawQuery('''
+      SELECT c.book_id, c.chapter 
+      FROM reading_plan_chapters c
+      JOIN reading_plan_days d ON c.day_id = d.id
+      WHERE d.plan_id = ? AND c.is_read = 1
+    ''', [planId]);
+  }
+
   Future<bool> isChapterRead(int bookId, int chapter) async {
     final db = await database;
     final results = await db.query(

@@ -90,6 +90,16 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
           child: Row(
             children: [
+              if (Navigator.canPop(context)) ...[
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  iconSize: 24,
+                  icon: Icon(Icons.arrow_back_ios_new, color: theme.iconTheme.color),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                const SizedBox(width: 12),
+              ],
               IconButton(
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),

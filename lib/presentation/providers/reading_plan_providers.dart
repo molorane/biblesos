@@ -30,6 +30,7 @@ class ReadingPlanController extends AsyncNotifier<void> {
     required DateTime startDate,
     required List<int> bookOrder,
     required int durationDays,
+    List<Map<String, int>>? completedChapters,
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
@@ -52,10 +53,12 @@ class ReadingPlanController extends AsyncNotifier<void> {
         final bookName = books.firstWhere((b) => b.id == bookId).name;
         final chapterCount = await repo.getChapterCount(bookId);
         for (int i = 1; i <= chapterCount; i++) {
+          final isRead = completedChapters?.any((c) => c['bookId'] == bookId && c['chapter'] == i) ?? false;
           allChapters.add(ReadingPlanChapter(
             bookId: bookId,
             bookName: bookName,
             chapter: i,
+            isRead: isRead,
           ));
         }
       }
@@ -99,18 +102,19 @@ class ReadingPlanController extends AsyncNotifier<void> {
     state = await AsyncValue.guard(() async {
       final repo = ref.read(bibleRepositoryProvider);
       
-      // 1. Delete old days and chapters for this plan
-      // We'll just delete the plan and re-create it with same ID if possible, 
-      // or just update metadata and re-generate days.
-      // Easiest is to delete days and re-insert.
+      // 1. Fetch completed chapters from the current plan
+      final completedChapters = await repo.getReadChaptersForPlan(planId);
+      
+      // 2. Delete old days and chapters for this plan
       await repo.deleteReadingPlan(planId);
       
-      // 2. Re-create with the same logic (this will create a new ID, but that's fine as we only have one active)
+      // 3. Re-create with preserved progress
       await createPlan(
         title: title,
         startDate: startDate,
         bookOrder: bookOrder,
         durationDays: durationDays,
+        completedChapters: completedChapters,
       );
     });
   }

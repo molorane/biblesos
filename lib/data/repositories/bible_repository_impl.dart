@@ -42,6 +42,7 @@ abstract class BibleRepository {
   Future<List<Map<String, dynamic>>> getDailyProgress();
   Future<void> deleteReadingPlan(int planId);
   Future<List<Map<String, dynamic>>> getReadingPlanChapters(int dayId);
+  Future<List<Map<String, int>>> getReadChaptersForPlan(int planId);
   
   // Quiz
   Future<List<Level>> getLevels();
@@ -121,6 +122,15 @@ class BibleRepositoryImpl implements BibleRepository {
   @override
   Future<List<Map<String, dynamic>>> getReadingPlanChapters(int dayId) async {
     return await _dbService.getReadingPlanChapters(dayId);
+  }
+
+  @override
+  Future<List<Map<String, int>>> getReadChaptersForPlan(int planId) async {
+    final results = await _dbService.getReadChaptersForPlan(planId);
+    return results.map((r) => {
+      'bookId': r['book_id'] as int,
+      'chapter': r['chapter'] as int,
+    }).toList();
   }
 
   @override
