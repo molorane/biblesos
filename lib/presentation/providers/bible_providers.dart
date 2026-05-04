@@ -184,6 +184,7 @@ final bookmarksProvider = FutureProvider<List<Verse>>((ref) async {
 });
 
 final verseOfTheDayProvider = FutureProvider<Verse?>((ref) async {
+  ref.watch(selectedTranslationProvider);
   final repository = ref.watch(bibleRepositoryProvider);
   // Default to John 3:3
   return await repository.getVerseByIds(43, 3, 3);
@@ -363,19 +364,25 @@ class SelectedTranslationNotifier extends Notifier<Translation> {
   }
 
   Future<void> set(Translation translation) async {
+    // 1. Switch the active database in the repository FIRST
+    final repository = ref.read(bibleRepositoryProvider);
+    await repository.setActiveTranslation(translation.abv);
+
+    // 2. Update state (triggers watches)
     state = translation;
+    
+    // 3. Persist
     await StorageService.setString(_keyAbv, translation.abv);
     await StorageService.setString(_keyName, translation.name);
     
-    // Switch the active database in the repository
-    final repository = ref.read(bibleRepositoryProvider);
-    await repository.setActiveTranslation(translation.abv);
-    
-    // Invalidate providers that depend on the database
+    // 4. Invalidate providers that depend on the database
     ref.invalidate(booksProvider);
     ref.invalidate(chaptersVersesProviderFamily);
     ref.invalidate(searchResultsProvider);
-    // Add other database-dependent providers as needed
+    ref.invalidate(verseOfTheDayProvider);
+    ref.invalidate(allChaptersProvider);
+    ref.invalidate(bookmarksProvider);
+    ref.invalidate(historyProvider);
   }
 }
 
