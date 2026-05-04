@@ -15,6 +15,7 @@ import 'package:biblesos/presentation/screens/topics_screen.dart';
 import 'package:biblesos/presentation/screens/doctrines_screen.dart';
 import 'package:biblesos/presentation/screens/quizzes_screen.dart';
 import 'package:biblesos/presentation/screens/reading_plan_overview_screen.dart';
+import 'package:biblesos/presentation/providers/reading_plan_providers.dart';
 import 'package:biblesos/core/utils/responsive_utils.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -97,6 +98,7 @@ class HomeContent extends ConsumerWidget {
         child: Column(
           children: [
             const VerseOfTheDayCard(),
+            const ReadingInsightsCard(),
             const QuickAccessMenu(),
             const SizedBox(height: 24),
           ],
@@ -327,6 +329,17 @@ class QuickAccessMenu extends StatelessWidget {
 
     final menuItems = [
       _MenuItem(
+        label: 'Reading Plan',
+        icon: Icons.auto_stories_outlined,
+        color: const Color(0xFF4A90E2),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ReadingPlanOverviewScreen()),
+          );
+        },
+      ),
+      _MenuItem(
         label: 'Daily Manna',
         icon: Icons.coffee_outlined,
         color: const Color(0xFF66BB6A),
@@ -393,17 +406,6 @@ class QuickAccessMenu extends StatelessWidget {
         },
       ),
       _MenuItem(
-        label: 'Reading Plan',
-        icon: Icons.auto_stories_outlined,
-        color: const Color(0xFF4A90E2),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ReadingPlanOverviewScreen()),
-          );
-        },
-      ),
-      _MenuItem(
         label: 'Quizzes',
         icon: Icons.quiz_outlined,
         color: const Color(0xFFFF7043),
@@ -438,10 +440,10 @@ class QuickAccessMenu extends StatelessWidget {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: ResponsiveUtils.getCrossAxisCount(context, phone: 3, tablet: 8, desktop: 8),
+          crossAxisCount: ResponsiveUtils.getCrossAxisCount(context, phone: 3, tablet: 4, desktop: 8),
           mainAxisSpacing: 8,
           crossAxisSpacing: 8,
-          childAspectRatio: 0.95,
+          childAspectRatio: ResponsiveUtils.getCrossAxisCount(context, phone: 1, tablet: 0, desktop: 0) == 1 ? 1.1 : 0.95,
         ),
         itemCount: menuItems.length,
         itemBuilder: (context, index) =>
@@ -451,15 +453,17 @@ class QuickAccessMenu extends StatelessWidget {
   }
 
   Widget _buildMenuTile(BuildContext context, _MenuItem item, bool isDark) {
+    final isTablet = ResponsiveUtils.getCrossAxisCount(context, phone: 0, tablet: 1, desktop: 1) == 1;
+
     return InkWell(
       onTap: item.onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
-          color: item.color.withOpacity(isDark ? 0.08 : 0.05),
+          color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: item.color.withOpacity(isDark ? 0.2 : 0.1),
+            color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
             width: 1,
           ),
         ),
@@ -467,26 +471,26 @@ class QuickAccessMenu extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(6),
+              padding: EdgeInsets.all(isTablet ? 12 : 6),
               decoration: BoxDecoration(
                 color: item.color.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(item.icon, color: item.color, size: 20),
+              child: Icon(item.icon, color: item.color, size: isTablet ? 32 : 22),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: isTablet ? 10 : 4),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 2),
               child: Text(
                 item.label,
                 textAlign: TextAlign.center,
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: GoogleFonts.inter(
-                  fontSize: 10,
+                  fontSize: isTablet ? 12 : 9,
                   fontWeight: FontWeight.w600,
                   color: isDark ? Colors.white.withOpacity(0.9) : Colors.black87,
-                  height: 1.1,
+                  height: 1.0,
                 ),
               ),
             ),
@@ -512,3 +516,171 @@ class _MenuItem {
 }
 
 
+class ReadingInsightsCard extends ConsumerWidget {
+  const ReadingInsightsCard({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final streakAsync = ref.watch(streakProvider);
+    final coverageAsync = ref.watch(bibleCoverageProvider);
+    final upcomingAsync = ref.watch(upcomingChaptersProvider);
+    final theme = Theme.of(context);
+    final horizontalPadding = ResponsiveUtils.getHorizontalPadding(context);
+
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ReadingPlanOverviewScreen()),
+        );
+      },
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 12),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [const Color(0xFF4DB66A), const Color(0xFF388E3C)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF4DB66A).withOpacity(0.3),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'BIBLE COVERAGE',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    coverageAsync.when(
+                      data: (coverage) => Text(
+                        '${coverage.toStringAsFixed(1)}%',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      loading: () => const SizedBox(height: 38, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                      error: (_, __) => const Text('Error', style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+                streakAsync.when(
+                  data: (streak) => Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.local_fire_department, color: Colors.orange, size: 24),
+                        Text(
+                          '$streak',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: coverageAsync.when(
+                data: (coverage) => LinearProgressIndicator(
+                  value: coverage / 100,
+                  minHeight: 8,
+                  backgroundColor: Colors.white.withOpacity(0.2),
+                  color: Colors.white,
+                ),
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: upcomingAsync.when(
+                data: (chapters) {
+                  if (chapters.isEmpty) {
+                    return const Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.white70, size: 16),
+                        SizedBox(width: 8),
+                        Text(
+                          'Start a plan to track your journey!',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
+                    );
+                  }
+                  final first = chapters.first;
+                  return Row(
+                    children: [
+                      const Icon(Icons.auto_stories, color: Colors.white, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'UP NEXT',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.6),
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              '${first.bookName} ${first.chapter}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 14),
+                    ],
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

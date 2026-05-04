@@ -58,7 +58,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 5,
+      version: 6,
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
           await db.execute('CREATE INDEX IF NOT EXISTS idx_bible_book_chapter ON bible (book, chapter)');
@@ -139,6 +139,12 @@ class DatabaseService {
             )
           ''');
         }
+        if (oldVersion < 6) {
+          try {
+            await db.execute('ALTER TABLE reading_plans ADD COLUMN duration_days INTEGER DEFAULT 365');
+            await db.execute('ALTER TABLE reading_plan_chapters ADD COLUMN read_at TEXT');
+          } catch (_) {}
+        }
       },
       onCreate: (db, version) async {
         await db.execute('CREATE INDEX IF NOT EXISTS idx_bible_book_chapter ON bible (book, chapter)');
@@ -178,7 +184,8 @@ class DatabaseService {
             title TEXT,
             start_date TEXT,
             book_order TEXT,
-            status INTEGER DEFAULT 0
+            status INTEGER DEFAULT 0,
+            duration_days INTEGER DEFAULT 365
           )
         ''');
         await db.execute('''
@@ -198,6 +205,7 @@ class DatabaseService {
             book_name TEXT,
             chapter INTEGER,
             is_read INTEGER DEFAULT 0,
+            read_at TEXT,
             FOREIGN KEY (day_id) REFERENCES reading_plan_days (id) ON DELETE CASCADE
           )
         ''');
@@ -458,6 +466,11 @@ class DatabaseService {
     return await db.insert('reading_plans', planData);
   }
 
+  Future<void> updateReadingPlan(int id, Map<String, dynamic> planData) async {
+    final db = await database;
+    await db.update('reading_plans', planData, where: 'id = ?', whereArgs: [id]);
+  }
+
   Future<void> saveReadingPlanDay(Map<String, dynamic> dayData, List<Map<String, dynamic>> chaptersData) async {
     final db = await database;
     await db.transaction((txn) async {
@@ -481,6 +494,12 @@ class DatabaseService {
     return plans.isNotEmpty ? plans.first : null;
   }
 
+  Future<Map<String, dynamic>?> getReadingPlanById(int id) async {
+    final db = await database;
+    final plans = await db.query('reading_plans', where: 'id = ?', limit: 1, whereArgs: [id]);
+    return plans.isNotEmpty ? plans.first : null;
+  }
+
   Future<List<Map<String, dynamic>>> getReadingPlanDays(int planId) async {
     final db = await database;
     return await db.query('reading_plan_days', where: 'plan_id = ?', orderBy: 'day_number ASC', whereArgs: [planId]);
@@ -493,18 +512,20 @@ class DatabaseService {
 
   Future<void> markChapterAsRead(int bookId, int chapter, bool isRead, {int? planId}) async {
     final db = await database;
+    final String? readAt = isRead ? DateTime.now().toIso8601String() : null;
+    
     if (planId != null) {
       await db.rawUpdate('''
         UPDATE reading_plan_chapters 
-        SET is_read = ? 
+        SET is_read = ?, read_at = ?
         WHERE book_id = ? AND chapter = ? AND day_id IN (
           SELECT id FROM reading_plan_days WHERE plan_id = ?
         )
-      ''', [isRead ? 1 : 0, bookId, chapter, planId]);
+      ''', [isRead ? 1 : 0, readAt, bookId, chapter, planId]);
     } else {
       await db.update(
         'reading_plan_chapters',
-        {'is_read': isRead ? 1 : 0},
+        {'is_read': isRead ? 1 : 0, 'read_at': readAt},
         where: 'book_id = ? AND chapter = ?',
         whereArgs: [bookId, chapter],
       );
@@ -596,5 +617,19 @@ class DatabaseService {
       'bookId': r['book_id'] as int,
       'chapter': r['chapter'] as int,
     }).toList();
+  }
+
+  Future<List<DateTime>> getHeatmapData() async {
+    final db = await database;
+    final results = await db.rawQuery('''
+      SELECT DISTINCT read_at 
+      FROM reading_plan_chapters 
+      WHERE is_read = 1 AND read_at IS NOT NULL
+    ''');
+    return results
+        .map((r) => DateTime.parse(r['read_at'] as String))
+        .map((dt) => DateTime(dt.year, dt.month, dt.day)) // Normalize to date only
+        .toSet() // Unique days
+        .toList();
   }
 }

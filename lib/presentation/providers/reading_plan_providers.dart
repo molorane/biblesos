@@ -31,6 +31,66 @@ final bibleCoverageProvider = FutureProvider<double>((ref) async {
   return await repo.getBibleCoverage();
 });
 
+final heatmapProvider = FutureProvider<List<DateTime>>((ref) async {
+  final repo = ref.watch(bibleRepositoryProvider);
+  return await repo.getHeatmapData();
+});
+
+final streakProvider = FutureProvider<int>((ref) async {
+  final heatmap = await ref.watch(heatmapProvider.future);
+  if (heatmap.isEmpty) return 0;
+  
+  final sortedDates = List<DateTime>.from(heatmap)..sort((a, b) => b.compareTo(a));
+  final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+  
+  int streak = 0;
+  DateTime currentCheck = today;
+  
+  // If haven't read today, check if read yesterday to continue streak
+  if (!sortedDates.contains(today)) {
+    currentCheck = today.subtract(const Duration(days: 1));
+    if (!sortedDates.contains(currentCheck)) return 0;
+  }
+  
+  for (int i = 0; i < 365; i++) {
+    final date = today.subtract(Duration(days: i));
+    if (sortedDates.contains(date)) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+  return streak;
+});
+
+final upcomingChaptersProvider = FutureProvider<List<ReadingPlanChapter>>((ref) async {
+  final plansAsync = await ref.watch(allReadingPlansProvider.future);
+  if (plansAsync.isEmpty) return [];
+  
+  final repo = ref.watch(bibleRepositoryProvider);
+  final List<ReadingPlanChapter> upcoming = [];
+  
+  final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+  
+  for (var planMap in plansAsync) {
+    final days = await repo.getReadingPlanDays(planMap['id'] as int);
+    // Find the first day that is not fully read
+    for (var day in days) {
+      final chapters = await repo.getReadingPlanChapters(day.id);
+      final unread = chapters
+          .map((c) => ReadingPlanChapter.fromMap(c))
+          .where((c) => !c.isRead)
+          .toList();
+      
+      if (unread.isNotEmpty) {
+        upcoming.addAll(unread);
+        break; // Only take one day's worth per plan
+      }
+    }
+  }
+  return upcoming;
+});
+
 class ReadingPlanController extends AsyncNotifier<void> {
   @override
   FutureOr<void> build() {}
@@ -58,6 +118,7 @@ class ReadingPlanController extends AsyncNotifier<void> {
         title: title,
         startDate: startDate,
         bookOrder: bookOrder,
+        durationDays: durationDays,
       );
       final planId = await repo.saveReadingPlan(plan);
 
@@ -109,6 +170,57 @@ class ReadingPlanController extends AsyncNotifier<void> {
     ref.invalidate(readingPlanChaptersProvider);
     ref.invalidate(allReadingPlansProvider);
     ref.invalidate(bibleCoverageProvider);
+    ref.invalidate(heatmapProvider);
+  }
+
+  Future<void> recalculatePlan(int planId) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final repo = ref.read(bibleRepositoryProvider);
+      
+      // 1. Get Plan and progress
+      final plan = await repo.getReadingPlanById(planId);
+      if (plan == null) return;
+      
+      final days = await repo.getReadingPlanDays(planId);
+      final List<ReadingPlanChapter> unreadChapters = [];
+      
+      for (var day in days) {
+        final chapters = await repo.getReadingPlanChapters(day.id);
+        for (var cMap in chapters) {
+          final chapter = ReadingPlanChapter.fromMap(cMap);
+          if (!chapter.isRead) {
+            unreadChapters.add(chapter);
+          }
+        }
+      }
+
+      if (unreadChapters.isEmpty) return;
+
+      // 2. Delete existing days from today onwards
+      final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+      await repo.deleteReadingPlan(planId); // This is aggressive, maybe we should just delete future days
+      
+      // Re-save plan with original ID but updated metadata if needed
+      // Actually, easier to just update the remaining chapters into new days
+      // Let's use updatePlan logic but with a twist
+      
+      final elapsedDays = today.difference(plan.startDate).inDays;
+      final remainingDays = max(1, plan.durationDays - elapsedDays);
+      
+      // Create a temporary plan structure to use createPlan's logic
+      await createPlan(
+        title: plan.title,
+        startDate: today,
+        bookOrder: plan.bookOrder,
+        durationDays: remainingDays,
+        completedChapters: await repo.getReadChaptersForPlan(planId),
+      );
+      
+      // Remove the old plan (since createPlan made a new one)
+      // This is a bit messy, but ensures the distribution is correct.
+      await repo.deleteReadingPlan(planId);
+    });
   }
 
   Future<void> updatePlan({

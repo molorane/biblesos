@@ -46,6 +46,9 @@ abstract class BibleRepository {
   Future<double> getBibleCoverage();
   Future<List<Map<String, dynamic>>> getAllReadingPlansWithProgress();
   Future<List<Map<String, int>>> getGlobalReadChapters();
+  Future<List<DateTime>> getHeatmapData();
+  Future<ReadingPlan?> getReadingPlanById(int planId);
+  Future<void> updateReadingPlanMetadata(int id, String title, int durationDays);
   
   // Quiz
   Future<List<Level>> getLevels();
@@ -130,6 +133,25 @@ class BibleRepositoryImpl implements BibleRepository {
   @override
   Future<List<Map<String, int>>> getGlobalReadChapters() async {
     return await _dbService.getGlobalReadChapters();
+  }
+
+  @override
+  Future<List<DateTime>> getHeatmapData() async {
+    return await _dbService.getHeatmapData();
+  }
+
+  @override
+  Future<ReadingPlan?> getReadingPlanById(int planId) async {
+    final map = await _dbService.getReadingPlanById(planId);
+    return map != null ? ReadingPlan.fromMap(map) : null;
+  }
+
+  @override
+  Future<void> updateReadingPlanMetadata(int id, String title, int durationDays) async {
+    await _dbService.updateReadingPlan(id, {
+      'title': title,
+      'duration_days': durationDays,
+    });
   }
 
   @override
