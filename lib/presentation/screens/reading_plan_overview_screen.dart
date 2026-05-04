@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:biblesos/presentation/providers/reading_plan_providers.dart';
 import 'package:biblesos/presentation/screens/reading_plan_creation_screen.dart';
 import 'package:biblesos/presentation/screens/reader_screen.dart';
+import 'package:biblesos/domain/entities/reading_plan_models.dart';
 import 'package:intl/intl.dart';
 
 class ReadingPlanOverviewScreen extends ConsumerWidget {
@@ -10,65 +11,253 @@ class ReadingPlanOverviewScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final activePlanAsync = ref.watch(activeReadingPlanProvider);
-    final progressAsync = ref.watch(readingPlanProgressProvider);
+    final plansAsync = ref.watch(allReadingPlansProvider);
+    final coverageAsync = ref.watch(bibleCoverageProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reading Plan'),
+        title: const Text('Bible Reading Plans'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.add_circle_outline, size: 28),
             onPressed: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const ReadingPlanCreationScreen()),
             ),
           ),
-          if (activePlanAsync.value != null)
-            PopupMenuButton<String>(
-              onSelected: (value) {
-                if (value == 'edit') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ReadingPlanCreationScreen(existingPlan: activePlanAsync.value),
-                    ),
-                  );
-                } else if (value == 'delete') {
-                  _showDeleteConfirm(context, ref, activePlanAsync.value!.id);
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(value: 'edit', child: Text('Edit Plan')),
-                const PopupMenuItem(value: 'delete', child: Text('Delete Plan', style: TextStyle(color: Colors.red))),
-              ],
-            ),
         ],
       ),
-      body: activePlanAsync.when(
-        data: (plan) {
-          if (plan == null) {
-            return _buildNoPlanView(context);
-          }
-
-          return Column(
-            children: [
-              _buildPlanHeader(context, plan, progressAsync),
-              Expanded(
-                child: progressAsync.when(
-                  data: (progress) => _buildDaysGrid(context, progress),
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, s) => Center(child: Text('Error: $e')),
+      body: plansAsync.when(
+        data: (plans) {
+          return RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(allReadingPlansProvider);
+              ref.invalidate(bibleCoverageProvider);
+            },
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: _buildCoverageCard(context, coverageAsync),
                 ),
-              ),
-            ],
+                if (plans.isEmpty)
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _buildNoPlanView(context),
+                  )
+                else ...[
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+                    sliver: SliverToBoxAdapter(
+                      child: Text('My Plans', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final plan = plans[index];
+                        return _buildPlanCard(context, ref, plan);
+                      },
+                      childCount: plans.length,
+                    ),
+                  ),
+                  const SliverPadding(padding: EdgeInsets.only(bottom: 40)),
+                ],
+              ],
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, s) => Center(child: Text('Error: $e')),
       ),
     );
+  }
+
+  Widget _buildCoverageCard(BuildContext context, AsyncValue<double> coverageAsync) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF4DB66A), Color(0xFF388E3C)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(color: const Color(0xFF4DB66A).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Overall Bible Coverage', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
+              const Icon(Icons.auto_stories, color: Colors.white, size: 20),
+            ],
+          ),
+          const SizedBox(height: 20),
+          coverageAsync.when(
+            data: (coverage) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('${coverage.toStringAsFixed(1)}%', style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold)),
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 8, left: 8),
+                      child: Text('Completed', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: LinearProgressIndicator(
+                    value: coverage / 100,
+                    minHeight: 8,
+                    backgroundColor: Colors.white.withOpacity(0.2),
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text('You have read ${(coverage * 11.89).toInt()} of 1189 chapters', 
+                  style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              ],
+            ),
+            loading: () => const SizedBox(height: 80, child: Center(child: CircularProgressIndicator(color: Colors.white))),
+            error: (_, __) => const Text('Error loading coverage', style: TextStyle(color: Colors.white70)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlanCard(BuildContext context, WidgetRef ref, Map<String, dynamic> planMap) {
+    final theme = Theme.of(context);
+    final plan = ReadingPlan.fromMap(planMap);
+    final totalRead = planMap['read_chapters'] as int;
+    final totalChapters = planMap['total_chapters'] as int;
+    final progress = (totalChapters > 0) ? (totalRead / totalChapters) : 0.0;
+    
+    // Duration from providers or map
+    // We need the duration_days which isn't in the base ReadingPlan model yet but is in the creation logic.
+    // Actually, I should probably add duration_days to the table if it's not there.
+    // Wait, let's check the table schema in database_service.dart again.
+    
+    // Ah, it's NOT in the table. I should probably calculate it from the days count.
+    final durationDays = (planMap['progress_list'] as List).length;
+    
+    final efficiency = EfficiencyInfo.calculate(
+      totalChapters, 
+      totalRead, 
+      plan.startDate, 
+      durationDays > 0 ? durationDays : 365
+    );
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))
+        ],
+      ),
+      child: InkWell(
+        onTap: () => _showPlanDetails(context, ref, planMap),
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(plan.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 4),
+                        Text('${DateFormat('MMM dd, yyyy').format(plan.startDate)} • $durationDays Days', 
+                          style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                  _buildEfficiencyBadge(efficiency),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('$totalRead / $totalChapters Chapters', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  Text('${(progress * 100).toInt()}%', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF4DB66A))),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 6,
+                  backgroundColor: theme.dividerColor.withOpacity(0.1),
+                  color: const Color(0xFF4DB66A),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.info_outline, size: 14, color: efficiency.color),
+                  const SizedBox(width: 6),
+                  Text(efficiency.description, style: TextStyle(fontSize: 11, color: efficiency.color, fontWeight: FontWeight.w500)),
+                  const Spacer(),
+                  const Icon(Icons.arrow_forward_ios, size: 12, color: Colors.grey),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEfficiencyBadge(EfficiencyInfo efficiency) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: efficiency.color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: efficiency.color.withOpacity(0.3)),
+      ),
+      child: Text(
+        '${efficiency.percentage.toInt()}% Paced',
+        style: TextStyle(color: efficiency.color, fontSize: 10, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+  void _showPlanDetails(BuildContext context, WidgetRef ref, Map<String, dynamic> planMap) {
+    // Navigate to a detail view or just show the grid
+    // For now, let's just update the "activePlan" to this one so the existing grid works
+    // Actually, it's better to show a dedicated detail screen or a dialog.
+    // I'll show the existing grid in a full-screen dialog for now.
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ReadingPlanDetailScreen(planMap: planMap),
+      ),
+    ).then((_) {
+      ref.invalidate(allReadingPlansProvider);
+      ref.invalidate(bibleCoverageProvider);
+    });
   }
 
   Widget _buildNoPlanView(BuildContext context) {
@@ -146,6 +335,20 @@ class ReadingPlanOverviewScreen extends ConsumerWidget {
                       Text('${(percent * 100).toInt()}%', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                     ],
                   ),
+                  const SizedBox(height: 4),
+                  Builder(
+                    builder: (context) {
+                      final theme = Theme.of(context);
+                      final totalRead = progress.fold<int>(0, (sum, d) => sum + (d['read_chapters'] as int));
+                      final totalChapters = progress.fold<int>(0, (sum, d) => sum + (d['total_chapters'] as int));
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('$totalRead / $totalChapters Chapters Read', style: TextStyle(fontSize: 11, color: theme.textTheme.bodySmall?.color?.withOpacity(0.7))),
+                        ],
+                      );
+                    },
+                  ),
                 ],
               );
             },
@@ -157,7 +360,7 @@ class ReadingPlanOverviewScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildDaysGrid(BuildContext context, List<Map<String, dynamic>> progress) {
+  Widget _buildDaysGrid(BuildContext context, List<Map<String, dynamic>> progress, {int? planId}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return GridView.builder(
       padding: const EdgeInsets.all(16),
@@ -194,7 +397,7 @@ class ReadingPlanOverviewScreen extends ConsumerWidget {
         }
 
         return InkWell(
-          onTap: () => _showDayDetails(context, day),
+          onTap: () => _showDayDetails(context, day, planId: planId),
           child: Container(
             decoration: BoxDecoration(
               color: bgColor,
@@ -218,7 +421,7 @@ class ReadingPlanOverviewScreen extends ConsumerWidget {
     );
   }
 
-  void _showDayDetails(BuildContext context, Map<String, dynamic> day) {
+  void _showDayDetails(BuildContext context, Map<String, dynamic> day, {int? planId}) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
@@ -263,6 +466,7 @@ class ReadingPlanOverviewScreen extends ConsumerWidget {
                                   builder: (context) => ReaderScreen(
                                     bookId: chapter.bookId,
                                     chapter: chapter.chapter,
+                                    planId: planId,
                                   ),
                                 ),
                               );
@@ -288,16 +492,62 @@ class ReadingPlanOverviewScreen extends ConsumerWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Plan?'),
-        content: const Text('This will permanently remove your current reading plan and all its progress. Are you sure?'),
+        content: const Text('This will permanently remove this reading plan and all its progress. Are you sure?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
           TextButton(
             onPressed: () {
               ref.read(readingPlanControllerProvider.notifier).deletePlan(planId);
-              Navigator.pop(context);
+              Navigator.pop(context); // Close dialog
+              Navigator.pop(context); // Close detail screen
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Plan deleted')));
             },
             child: const Text('DELETE', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ReadingPlanDetailScreen extends ConsumerWidget {
+  final Map<String, dynamic> planMap;
+  const ReadingPlanDetailScreen({super.key, required this.planMap});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final plan = ReadingPlan.fromMap(planMap);
+    final progressList = planMap['progress_list'] as List<Map<String, dynamic>>;
+    
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(plan.title),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'edit') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ReadingPlanCreationScreen(existingPlan: plan),
+                  ),
+                );
+              } else if (value == 'delete') {
+                ReadingPlanOverviewScreen()._showDeleteConfirm(context, ref, plan.id);
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'edit', child: Text('Edit Plan')),
+              const PopupMenuItem(value: 'delete', child: Text('Delete Plan', style: TextStyle(color: Colors.red))),
+            ],
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          ReadingPlanOverviewScreen()._buildPlanHeader(context, plan, AsyncValue.data(progressList)),
+          Expanded(
+            child: ReadingPlanOverviewScreen()._buildDaysGrid(context, progressList, planId: plan.id),
           ),
         ],
       ),

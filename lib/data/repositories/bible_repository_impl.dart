@@ -37,12 +37,15 @@ abstract class BibleRepository {
   Future<List<ReadingPlan>> getReadingPlans();
   Future<ReadingPlan?> getActiveReadingPlan();
   Future<List<ReadingPlanDay>> getReadingPlanDays(int planId);
-  Future<void> markChapterAsRead(int bookId, int chapter, bool isRead);
+  Future<void> markChapterAsRead(int bookId, int chapter, bool isRead, {int? planId});
   Future<bool> isChapterRead(int bookId, int chapter);
-  Future<List<Map<String, dynamic>>> getDailyProgress();
+  Future<List<Map<String, dynamic>>> getDailyProgress({int? planId});
   Future<void> deleteReadingPlan(int planId);
   Future<List<Map<String, dynamic>>> getReadingPlanChapters(int dayId);
   Future<List<Map<String, int>>> getReadChaptersForPlan(int planId);
+  Future<double> getBibleCoverage();
+  Future<List<Map<String, dynamic>>> getAllReadingPlansWithProgress();
+  Future<List<Map<String, int>>> getGlobalReadChapters();
   
   // Quiz
   Future<List<Level>> getLevels();
@@ -100,8 +103,8 @@ class BibleRepositoryImpl implements BibleRepository {
   }
 
   @override
-  Future<void> markChapterAsRead(int bookId, int chapter, bool isRead) async {
-    await _dbService.markChapterAsRead(bookId, chapter, isRead);
+  Future<void> markChapterAsRead(int bookId, int chapter, bool isRead, {int? planId}) async {
+    await _dbService.markChapterAsRead(bookId, chapter, isRead, planId: planId);
   }
 
   @override
@@ -110,8 +113,23 @@ class BibleRepositoryImpl implements BibleRepository {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getDailyProgress() async {
-    return await _dbService.getDailyProgress();
+  Future<List<Map<String, dynamic>>> getDailyProgress({int? planId}) async {
+    return await _dbService.getDailyProgress(planId: planId);
+  }
+
+  @override
+  Future<double> getBibleCoverage() async {
+    return await _dbService.getBibleCoverage();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getAllReadingPlansWithProgress() async {
+    return await _dbService.getAllReadingPlansWithProgress();
+  }
+
+  @override
+  Future<List<Map<String, int>>> getGlobalReadChapters() async {
+    return await _dbService.getGlobalReadChapters();
   }
 
   @override

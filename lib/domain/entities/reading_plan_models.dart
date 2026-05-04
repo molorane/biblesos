@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class ReadingPlan {
   final int id;
   final String title;
@@ -83,5 +85,37 @@ class ReadingPlanChapter {
       chapter: map['chapter'],
       isRead: map['is_read'] == 1,
     );
+  }
+}
+
+class EfficiencyInfo {
+  final double percentage;
+  final String description;
+  final Color color;
+
+  EfficiencyInfo({
+    required this.percentage,
+    required this.description,
+    required this.color,
+  });
+
+  static EfficiencyInfo calculate(int totalChapters, int readChapters, DateTime startDate, int durationDays) {
+    if (totalChapters == 0) return EfficiencyInfo(percentage: 0, description: 'N/A', color: Colors.grey);
+    
+    final daysElapsed = DateTime.now().difference(startDate).inDays;
+    if (daysElapsed <= 0) return EfficiencyInfo(percentage: 100, description: 'Just Started', color: Colors.blue);
+
+    final expectedChapters = (totalChapters / durationDays) * daysElapsed;
+    final percentage = (readChapters / expectedChapters) * 100;
+
+    if (percentage >= 110) {
+      return EfficiencyInfo(percentage: percentage, description: 'Ahead of Schedule', color: Colors.purple);
+    } else if (percentage >= 95) {
+      return EfficiencyInfo(percentage: percentage, description: 'On Track', color: Colors.green);
+    } else if (percentage >= 80) {
+      return EfficiencyInfo(percentage: percentage, description: 'Slightly Behind', color: Colors.orange);
+    } else {
+      return EfficiencyInfo(percentage: percentage, description: 'Behind Schedule', color: Colors.red);
+    }
   }
 }

@@ -16,8 +16,9 @@ import 'package:biblesos/presentation/providers/reading_plan_providers.dart';
 class ReaderScreen extends ConsumerStatefulWidget {
   final int? bookId;
   final int? chapter;
+  final int? planId;
 
-  const ReaderScreen({super.key, this.bookId, this.chapter});
+  const ReaderScreen({super.key, this.bookId, this.chapter, this.planId});
 
   @override
   ConsumerState<ReaderScreen> createState() => _ReaderScreenState();
@@ -300,6 +301,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
               return ChapterView(
                 bookId: info.bookId,
                 chapter: info.chapter,
+                planId: widget.planId,
               );
             },
           );
@@ -316,11 +318,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
 class ChapterView extends ConsumerStatefulWidget {
   final int bookId;
   final int chapter;
+  final int? planId;
 
   const ChapterView({
     super.key,
     required this.bookId,
     required this.chapter,
+    this.planId,
   });
 
   @override
@@ -793,7 +797,8 @@ class _ChapterViewState extends ConsumerState<ChapterView> {
             await ref.read(readingPlanControllerProvider.notifier).markChapterRead(
               currentBookId, 
               currentChapter, 
-              !isRead
+              !isRead,
+              planId: widget.planId,
             );
             ref.invalidate(isChapterReadProvider);
             if (context.mounted) {

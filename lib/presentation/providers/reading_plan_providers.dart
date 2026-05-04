@@ -21,6 +21,16 @@ final readingPlanProgressProvider = FutureProvider<List<Map<String, dynamic>>>((
   return await repo.getDailyProgress();
 });
 
+final allReadingPlansProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final repo = ref.watch(bibleRepositoryProvider);
+  return await repo.getAllReadingPlansWithProgress();
+});
+
+final bibleCoverageProvider = FutureProvider<double>((ref) async {
+  final repo = ref.watch(bibleRepositoryProvider);
+  return await repo.getBibleCoverage();
+});
+
 class ReadingPlanController extends AsyncNotifier<void> {
   @override
   FutureOr<void> build() {}
@@ -31,11 +41,17 @@ class ReadingPlanController extends AsyncNotifier<void> {
     required List<int> bookOrder,
     required int durationDays,
     List<Map<String, int>>? completedChapters,
+    bool syncProgress = false,
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       final repo = ref.read(bibleRepositoryProvider);
       
+      List<Map<String, int>>? chaptersToMarkAsRead = completedChapters;
+      if (syncProgress) {
+        chaptersToMarkAsRead = await repo.getGlobalReadChapters();
+      }
+
       // 1. Save Plan metadata
       final plan = ReadingPlan(
         id: 0,
@@ -53,7 +69,7 @@ class ReadingPlanController extends AsyncNotifier<void> {
         final bookName = books.firstWhere((b) => b.id == bookId).name;
         final chapterCount = await repo.getChapterCount(bookId);
         for (int i = 1; i <= chapterCount; i++) {
-          final isRead = completedChapters?.any((c) => c['bookId'] == bookId && c['chapter'] == i) ?? false;
+          final isRead = chaptersToMarkAsRead?.any((c) => c['bookId'] == bookId && c['chapter'] == i) ?? false;
           allChapters.add(ReadingPlanChapter(
             bookId: bookId,
             bookName: bookName,
@@ -80,15 +96,19 @@ class ReadingPlanController extends AsyncNotifier<void> {
 
       ref.invalidate(activeReadingPlanProvider);
       ref.invalidate(readingPlanProgressProvider);
+      ref.invalidate(allReadingPlansProvider);
+      ref.invalidate(bibleCoverageProvider);
     });
   }
 
-  Future<void> markChapterRead(int bookId, int chapter, bool isRead) async {
+  Future<void> markChapterRead(int bookId, int chapter, bool isRead, {int? planId}) async {
     final repo = ref.read(bibleRepositoryProvider);
-    await repo.markChapterAsRead(bookId, chapter, isRead);
+    await repo.markChapterAsRead(bookId, chapter, isRead, planId: planId);
     ref.invalidate(readingPlanProgressProvider);
     ref.invalidate(readingPlanDaysProvider);
     ref.invalidate(readingPlanChaptersProvider);
+    ref.invalidate(allReadingPlansProvider);
+    ref.invalidate(bibleCoverageProvider);
   }
 
   Future<void> updatePlan({
@@ -124,6 +144,8 @@ class ReadingPlanController extends AsyncNotifier<void> {
     await repo.deleteReadingPlan(planId);
     ref.invalidate(activeReadingPlanProvider);
     ref.invalidate(readingPlanProgressProvider);
+    ref.invalidate(allReadingPlansProvider);
+    ref.invalidate(bibleCoverageProvider);
   }
 }
 

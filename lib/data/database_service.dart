@@ -491,14 +491,24 @@ class DatabaseService {
     return await db.query('reading_plan_chapters', where: 'day_id = ?', whereArgs: [dayId]);
   }
 
-  Future<void> markChapterAsRead(int bookId, int chapter, bool isRead) async {
+  Future<void> markChapterAsRead(int bookId, int chapter, bool isRead, {int? planId}) async {
     final db = await database;
-    await db.update(
-      'reading_plan_chapters',
-      {'is_read': isRead ? 1 : 0},
-      where: 'book_id = ? AND chapter = ?',
-      whereArgs: [bookId, chapter],
-    );
+    if (planId != null) {
+      await db.rawUpdate('''
+        UPDATE reading_plan_chapters 
+        SET is_read = ? 
+        WHERE book_id = ? AND chapter = ? AND day_id IN (
+          SELECT id FROM reading_plan_days WHERE plan_id = ?
+        )
+      ''', [isRead ? 1 : 0, bookId, chapter, planId]);
+    } else {
+      await db.update(
+        'reading_plan_chapters',
+        {'is_read': isRead ? 1 : 0},
+        where: 'book_id = ? AND chapter = ?',
+        whereArgs: [bookId, chapter],
+      );
+    }
   }
 
   Future<List<Map<String, dynamic>>> getReadChaptersForPlan(int planId) async {
@@ -521,9 +531,11 @@ class DatabaseService {
     return results.isNotEmpty;
   }
 
-  Future<List<Map<String, dynamic>>> getDailyProgress() async {
+  Future<List<Map<String, dynamic>>> getDailyProgress({int? planId}) async {
     final db = await database;
-    // Get summary of read vs total chapters per day for the active plan
+    String whereClause = planId != null ? 'WHERE p.id = ?' : 'WHERE p.status = 0';
+    List<dynamic> whereArgs = planId != null ? [planId] : [];
+    
     return await db.rawQuery('''
       SELECT d.id, d.day_number, d.date, 
              COUNT(c.id) as total_chapters,
@@ -531,14 +543,58 @@ class DatabaseService {
       FROM reading_plan_days d
       JOIN reading_plan_chapters c ON d.id = c.day_id
       JOIN reading_plans p ON d.plan_id = p.id
-      WHERE p.status = 0
+      $whereClause
       GROUP BY d.id
       ORDER BY d.day_number ASC
+    ''', whereArgs);
+  }
+
+  Future<double> getBibleCoverage() async {
+    final db = await database;
+    // 1189 is the total number of chapters in the Bible
+    final result = await db.rawQuery('''
+      SELECT COUNT(DISTINCT (book_id || '_' || chapter)) as read_count
+      FROM reading_plan_chapters
+      WHERE is_read = 1
     ''');
+    final readCount = (result.first['read_count'] as int?) ?? 0;
+    return (readCount / 1189.0) * 100;
+  }
+
+  Future<List<Map<String, dynamic>>> getAllReadingPlansWithProgress() async {
+    final db = await database;
+    final plans = await db.query('reading_plans', orderBy: 'id DESC');
+    
+    List<Map<String, dynamic>> results = [];
+    for (var plan in plans) {
+      final progress = await getDailyProgress(planId: plan['id'] as int);
+      final totalChapters = progress.fold<int>(0, (sum, d) => sum + (d['total_chapters'] as int));
+      final readChapters = progress.fold<int>(0, (sum, d) => sum + (d['read_chapters'] as int));
+      
+      final planWithProgress = Map<String, dynamic>.from(plan);
+      planWithProgress['total_chapters'] = totalChapters;
+      planWithProgress['read_chapters'] = readChapters;
+      planWithProgress['progress_list'] = progress;
+      results.add(planWithProgress);
+    }
+    return results;
   }
 
   Future<void> deleteReadingPlan(int planId) async {
     final db = await database;
     await db.delete('reading_plans', where: 'id = ?', whereArgs: [planId]);
+  }
+
+  Future<List<Map<String, int>>> getGlobalReadChapters() async {
+    final db = await database;
+    final results = await db.rawQuery('''
+      SELECT DISTINCT book_id, chapter 
+      FROM reading_plan_chapters 
+      WHERE is_read = 1
+    ''');
+    return results.map((r) => {
+      'bookId': r['book_id'] as int,
+      'chapter': r['chapter'] as int,
+    }).toList();
   }
 }
