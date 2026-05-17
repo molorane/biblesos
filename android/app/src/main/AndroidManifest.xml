@@ -29,7 +29,7 @@
     </queries>
     <application
         android:usesCleartextTraffic="true"
-        android:label="biblesos"
+        android:label="Buka Ea Khale"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity
